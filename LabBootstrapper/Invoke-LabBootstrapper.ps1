@@ -29,17 +29,13 @@ $Script:PLACEHOLDER_INPUTLANGUAGE = "PLACEHOLDER_INPUTLANGUAGE";
 $Script:PLACEHOLDER_PASSWORD = "PLACEHOLDER_PASSWORD";
 
 $Script:Vms = @(
-    "DC"#,
-    #"DB",
-    #"OM",
-    #"OR"
+    "DC",
+    "DB",
+    "OM",
+    "OR"
 )
 
 # 0. Validation
-# - Do we have Hyper-V?
-# - VHD path valid?
-# - VM path valid?
-
 if(-not $SkipVmCreation)
 {
     Import-Module Hyper-V -ErrorAction SilentlyContinue;
@@ -109,3 +105,5 @@ if(-not $SkipVmCreation)
         Start-VM -VM $vm -ErrorAction SilentlyContinue;
     }
 }
+
+# 2. Promote DC
