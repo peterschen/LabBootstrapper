@@ -47,16 +47,32 @@ NetworkPrefix | No | Network prefix used for VMs | 10.4.0
 
 ``Invoke-LabBootstrapper.ps1 -LabPrefix Test -VhdPath "server2012r2.vhdx' -VmPath C:\ -HvSwitchName "LAB" -OsProductKey "D2N9P-3P6X9-2R39C-7RTCD-MDVJX";``
 
-**Create a lab with Windows Server 2016 Tp5:**
+**Create a lab with Windows Server 2016 TP5:**
 
 ``Invoke-LabBootstrapper.ps1 -LabPrefix Test -VhdPath "server2016tp5.vhdx' -VmPath C:\ -HvSwitchName "LAB";``
 
-# Configuration Signature
+# Node LCM configuration
+Each nodes' LCM is configured to the following:
+
+```
+ConfigurationModeFrequencyMins = 15
+RebootNodeIfNeeded = $true
+ConfigurationMode = "ApplyAndAutoCorrect"            
+ActionAfterReboot = "ContinueConfiguration"
+RefreshMode = "Push"
+DebugMode = "All"
+```
+
+# Node DSC Configuration
+Each node which is to be created needs a DSC configuration. By default the nodes ``DC``, ``DB``, ``OM`` and ``OR``are created and already have a configuration. The configuration for the domain controller contains the creation of the domain, appropriate users and groups.
+
+If you want to add additional nodes to your lab, make sure that a configuration exists. The signature of the configuration needs to adhere to the following:
+
+```
 [Parameter(Mandatory = $true)]
 [string] $DomainName,
-
 [Parameter(Mandatory = $true)]
 [pscredential] $Credential,
-
 [Parameter(Mandatory = $true)]
 [string] $NetworkPrefix,
+```
