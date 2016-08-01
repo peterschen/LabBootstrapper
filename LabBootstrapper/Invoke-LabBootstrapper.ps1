@@ -1,22 +1,69 @@
 ﻿param
 (
-    [string] $Prefix,
+    [string] $LabPrefix,
+    [string[]] $LabVms = @(
+        "DC",
+        "DB",
+        "OM",
+        "OR"
+    ),
     [string] $VhdPath,
     [string] $VmPath,
     [string] $HvSwitchName,
     [string] $OsProductKey = "MFY9F-XBN2F-TYFMP-CCV49-RMYVH",
-    [string] $OsOrganization = $Prefix,
-    [string] $OsOwner = $Prefix,
+    [string] $OsOrganization = $LabPrefix,
+    [string] $OsOwner = $LabPrefix,
     [string] $OsTimezone = "W. Europe Standard Time",
     [string] $OsUiLanguage = "en-US",
     [string] $OsInputLanguage = "de-DE",
-    [string] $OsPassword = "Admin123"
+    [string] $OsPassword = "Admin123",
+    [string] $NetworkPrefix = "10.4.0"
 );
 
 $ErrorActionPreference = "Stop";
+$VerbosePreference = "Continue";
 
 # Source libraries
 . ".\LibUnattend.ps1";
+
+function Test-Prerequisites
+{
+    param
+    (
+    );
+
+    process
+    {
+        $VerbosePreference = "SilentlyContinue";
+        Import-Module Hyper-V -ErrorAction SilentlyContinue;
+        $VerbosePreference = "Continue";
+
+        if(-not (Get-Module Hyper-V))
+        {
+            throw "Hyper-V PowerShell module could not be loaded";
+        }
+
+        if(-not (Test-Path -Path $VhdPath))
+        {
+            throw "VHD path does not exists";
+        }
+
+        if(-not (Test-Path -Path $VmPath))
+        {
+            throw "VM path does not exists";
+        }
+
+        if(-not (Test-Path -Path ".\Assets"))
+        {
+            throw "Assets could not be found";
+        }
+
+        if(-not (Get-VMSwitch -Name $HvSwitchName -ErrorAction SilentlyContinue))
+        {
+            throw "Hyper-V switch could not be found";
+        }
+    }
+}
 
 function Copy-UnattendFile
 {
@@ -45,7 +92,7 @@ function Copy-UnattendFile
         $unattend = $unattend -replace $Script:PLACEHOLDER_INPUTLANGUAGE, $InputLanguage;
         $unattend = $unattend -replace $Script:PLACEHOLDER_PASSWORD, $Password;
         
-        $unattendFile = New-Item -Path $Path -Name "unattend.xml" -ItemType File;
+        $unattendFile = New-Item -Path $Path -Name "unattend.xml" -ItemType File -Force;
         Add-Content -Path $unattendFile.FullName -Value $unattend;
     }
 }
@@ -61,10 +108,7 @@ function Copy-DscModules
 
     process
     {
-        foreach($module in $Modules)
-        {
-            Copy-Item -Path ".\Assets\DscModules\$module" -Destination $Path -Recurse;
-        }
+        Copy-Item -Path ".\Assets\DscModules\*" -Destination $Path -Recurse -Force;
     }
 }
 
@@ -103,12 +147,54 @@ function Copy-DscConfiguration
 
         $workDirectory = "$env:TEMP\LabBootstrapper";
         $credential = New-Object System.Management.Automation.PSCredential "Administrator", (ConvertTo-SecureString -AsPlainText -Force $Password);
-        $dscConfiguration = "Configuration$($vmName) -DomainName '$($Prefix.ToLower()).lab' -Credential `$credential -OutputPath '$workDirectory' -ConfigurationData @{AllNodes =@(@{NodeName = '$vmName'; PSDscAllowPlainTextPassword = `$true; PSDscAllowDomainUser = `$true})}";
+        $dscConfiguration = "Configuration$($vmName) -DomainName '$($LabPrefix.ToLower()).lab' -Credential `$credential -NetworkPrefix `$NetworkPrefix -OutputPath '$workDirectory' -ConfigurationData @{AllNodes =@(@{NodeName = '$vmName'; PSDscAllowPlainTextPassword = `$true; PSDscAllowDomainUser = `$true})}";
         $dscConfigurationScript = [scriptblock]::Create($dscConfiguration);
         Invoke-Command -ScriptBlock $dscConfigurationScript | Out-Null;
 
         Remove-Item -Path "$($Path)\Current.mof" -Force -ErrorAction SilentlyContinue;
         Copy-Item -Path "$($workDirectory)\$($ComputerName).mof" -Destination "$($Path)\Pending.mof" -Force;
+    }
+}
+
+function WriteLog-Debug
+{
+    param
+    (
+        [string] $Prefix,
+        [string] $Message
+    );
+
+    process
+    {
+        Write-Debug -Message "[$($Prefix)] $($Message)";
+    }
+}
+
+function WriteLog-Verbose
+{
+    param
+    (
+        [string] $Prefix,
+        [string] $Message
+    );
+
+    process
+    {
+        Write-Verbose -Message "[$($Prefix)] $($Message)";
+    }
+}
+
+function WriteLog-Information
+{
+    param
+    (
+        [string] $Prefix,
+        [string] $Message
+    );
+
+    process
+    {
+        Write-Information -Message "[$($Prefix)] $($Message)";
     }
 }
 
@@ -121,134 +207,107 @@ $Script:PLACEHOLDER_UILANGUAGE = "PLACEHOLDER_UILANGUAGE";
 $Script:PLACEHOLDER_INPUTLANGUAGE = "PLACEHOLDER_INPUTLANGUAGE";
 $Script:PLACEHOLDER_PASSWORD = "PLACEHOLDER_PASSWORD";
 
-$Script:Vms = @(
-    "DC"#,
-    #"DB",
-    #"OM",
-    #"OR"
-);
-
-$Script:dscModules = @(
-    "xNetworking", 
-    "xActiveDirectory", 
-    "xPSDesiredStateConfiguration"
-);
-
-<#
-    0. Validation
-    1. Create VMs
-    2. Inject DSC configuration into VM
-    3. Start VM
-#>
-
-# 0. Validation
-Import-Module Hyper-V -ErrorAction SilentlyContinue;
-if(-not (Get-Module Hyper-V))
+try
 {
-    throw "Hyper-V PowerShell module could not be loaded";
-}
+    # Validation
+    Test-Prerequisites;
 
-if(-not (Test-Path -Path $VhdPath))
-{
-    throw "VHD path does not exists";
-}
+    $requireUnattend = $false;
 
-if(-not (Test-Path -Path $VmPath))
-{
-    throw "VM path does not exists";
-}
-
-if(-not (Test-Path -Path ".\Assets"))
-{
-    throw "Assets could not be found";
-}
-
-if(-not (Get-VMSwitch -Name $HvSwitchName -ErrorAction SilentlyContinue))
-{
-    throw "Hyper-V switch could not be found";
-}
-
-
-$requireUnattend = $false;
-$requireDscModules = $false;
-
-# 1. Create VMs
-foreach($vmName in $Script:Vms)
-{
-    $proceed = $true;
-    $newVhdPath = "$VmPath\$($Prefix)-$($vmName).vhdx";
-
-    # Check if the VM exists
-    $vm = Get-VM -Name "$($Prefix)-$($vmName)" -ErrorAction SilentlyContinue;
-    if(-not $vm)
+    # Main processing loop
+    foreach($vmName in $LabVms)
     {
-        # Test if the VHD exists
-        if(-not (Test-Path -Path $newVhdPath))
-        {
-            $newVhd = New-VHD -ParentPath $VhdPath -Path $newVhdPath -Differencing -SizeBytes 80GB;
-            $newVhdPath = $newVhd.Path;
+        $proceed = $true;
+        $newVhdPath = "$VmPath\$($LabPrefix)-$($vmName).vhdx";
+        
+        WriteLog-Verbose -Prefix $vmName -Message "Start processing";
 
-            $requireUnattend = $true;
-            $requireDscModules = $true;
+        # Check if the VM exists
+        $vm = Get-VM -Name "$($LabPrefix)-$($vmName)" -ErrorAction SilentlyContinue;
+        if(-not $vm)
+        {
+            WriteLog-Verbose -Prefix $vmName -Message "VM does not exists";
+
+            # Test if the VHD exists
+            if(-not (Test-Path -Path $newVhdPath))
+            {
+                $newVhd = New-VHD -ParentPath $VhdPath -Path $newVhdPath -Differencing -SizeBytes 80GB;
+                $newVhdPath = $newVhd.Path;
+
+                $requireUnattend = $true;
+            }
+            else
+            {
+                WriteLog-Information -Prefix $vmName -Message "VHD $($newVhdPath) already exists";
+            }
+            
+            $vm = New-VM -Name "$($LabPrefix)-$($vmName)" -SwitchName $HvSwitchName -Path $VmPath -VHDPath $newVhdPath -MemoryStartupBytes 1GB -Generation 2;
+            Set-VMMemory -VM $vm -DynamicMemoryEnabled $false;
         }
         else
         {
-            Write-Warning "VHD already exists";
-        }
-            
-        $vm = New-VM -Name "$($Prefix)-$($vmName)" -SwitchName $HvSwitchName -Path $VmPath -VHDPath $newVhdPath -MemoryStartupBytes 1GB -Generation 2;
-        Set-VMMemory -VM $vm -DynamicMemoryEnabled $false;
-    }
-    else
-    {
-        Write-Warning "Skipping VM creation for $($vmName) as it already exists";
-    }
-
-    if($proceed)
-    {
-        # Stop VM before mouting the VHD
-        if($vm.State -ne "Off")
-        {
-            Stop-VM -VM $vm;
+            WriteLog-Information -Prefix $vmName -Message "Skipping VM creation for $($vmName) as it already exists";
         }
 
-        try
+        if($proceed)
         {
-            # Mount VHD to inject unattend XML, copy DSC modules and copy DSC meta info and documents
-            $mountPoint = (Get-Disk -Number (Mount-VHD -Path $newVhdPath -Passthru).DiskNumber | Get-Partition | Where-Object {$_.Type -eq "Basic"}).DriveLetter;
-
-            if($requireUnattend)
+            # Stop VM before mouting the VHD
+            if($vm.State -ne "Off")
             {
-                Copy-UnattendFile -Path "$($mountPoint):\" -ComputerName $vmName -ProductKey $OsProductKey -Organization $OsOrganization `
-                    -Owner $OsOwner -Timezone $OsTimezone -UiLanguage $OsUiLanguage -InputLanguage $OsInputLanguage -Password $OsPassword;
-            }
-            
-            if($requireDscModules)
-            {
-                Copy-DscModules -Path "$($mountPoint):\Program Files\WindowsPowerShell\Modules" -Modules $Script:dscModules;
+                WriteLog-Verbose -Prefix $vmName -Message "Shutting down running VM";
+                Stop-VM -VM $vm;
             }
 
-            # Build and copy DSC meta configuration
-            Copy-DscMetaConfiguration -ComputerName $vmName -Path "$($mountPoint):\Windows\system32\Configuration";
+            try
+            {
+                WriteLog-Debug -Prefix $vmName -Message "Mounting VHD $($newVhdPath)";
 
-            # Build vm specific DSC configuration
-            Copy-DscConfiguration -ComputerName $vmName -Path "$($mountPoint):\Windows\system32\Configuration" -Password $OsPassword;
+                # Mount VHD to inject unattend XML, copy DSC modules and copy DSC meta info and documents
+                $mountPoint = (Get-Disk -Number (Mount-VHD -Path $newVhdPath -Passthru).DiskNumber | Get-Partition | Where-Object {$_.Type -eq "Basic"}).DriveLetter;
+
+                if($requireUnattend)
+                {
+                    WriteLog-Verbose -Prefix $vmName -Message "Copying unattend.xml";
+                    Copy-UnattendFile -Path "$($mountPoint):\" -ComputerName $vmName -ProductKey $OsProductKey -Organization $OsOrganization `
+                        -Owner $OsOwner -Timezone $OsTimezone -UiLanguage $OsUiLanguage -InputLanguage $OsInputLanguage -Password $OsPassword;
+                }
+            
+                # Copy DSC modules
+                WriteLog-Verbose -Prefix $vmName -Message "Copying DSC modules";
+                Copy-DscModules -Path "$($mountPoint):\Program Files\WindowsPowerShell\Modules";
+
+                # Build and copy DSC meta configuration
+                WriteLog-Verbose -Prefix $vmName -Message "Building and copying LCM configuration";
+                Copy-DscMetaConfiguration -ComputerName $vmName -Path "$($mountPoint):\Windows\system32\Configuration";
+
+                # Build vm specific DSC configuration
+                WriteLog-Verbose -Prefix $vmName -Message "Building and copying DSC configuration";
+                Copy-DscConfiguration -ComputerName $vmName -Path "$($mountPoint):\Windows\system32\Configuration" -Password $OsPassword;
+            }
+            catch
+            {
+                $proceeed = $false;
+                throw $_;
+            }
+            finally
+            {
+                # Make sure we dismount the VHD in any case
+                Dismount-VHD -Path $newVhdPath;
+                WriteLog-Debug -Prefix $vmName -Message "Dismounting VHD $($newVhdPath)";
+            }
         }
-        catch
+
+        if($proceed)
         {
-            throw $_;
-        }
-        finally
-        {
-            # Make sure we dismount the VHD in any case
-            Dismount-VHD -Path $newVhdPath;
-            $proceeed = $false;
+            WriteLog-Verbose -Prefix $vmName -Message "Starting VM";
+
+            # Start VM
+            Start-VM -VM $vm -ErrorAction SilentlyContinue;
         }
     }
-
-    if($proceed)
-    {
-        # Start VM
-        Start-VM -VM $vm -ErrorAction SilentlyContinue;
-    }
+}
+catch
+{
+    $line = $_.InvocationInfo.ScriptLineNumber;
+    Write-Error "An error ocurred on line $($line): $($_)";
 }

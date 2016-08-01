@@ -8,6 +8,9 @@ configuration ConfigurationDC
         [Parameter(Mandatory = $true)]
         [pscredential] $Credential,
 
+        [Parameter(Mandatory = $true)]
+        [string] $NetworkPrefix,
+
 	    [int] $RetryCount = 20,
         [int] $RetryInterval = 30
     );
@@ -17,11 +20,10 @@ configuration ConfigurationDC
     $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
-        "DNS",
-        "RSAT-DNS-Server",
         "AD-Domain-Services",
         "RSAT-AD-PowerShell",
-        "RSAT-ADDS-Tools"
+        "RSAT-ADDS-Tools",
+        "RSAT-DNS-Server"
     );
     
     $ous = @(
@@ -47,9 +49,16 @@ configuration ConfigurationDC
     );
 
     $groups = @(
-        @{Name = "Administrators"; Members =@("$($userChristoph.Name)")}
-        @{Name = "g-sql-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
-        @{Name = "g-om-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)", "$($userOmMsaa.Name)")}
+        @{Name = "g-sql-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")},
+        @{Name = "g-om-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)", "$($userOmMsaa.Name)")},
+        @{Name = "g-RemoteDesktopUsers"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
+        @{Name = "g-RemoteManagementUsers"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
+    );
+
+    $builtinGroups = @(
+        @{Name = "Administrators"; Members =@("$($userChristoph.Name)")},
+        @{Name = "Remote Desktop Users"; Members =@("g-RemoteDesktopUsers")}
+        @{Name = "Remote Management Users"; Members =@("g-RemoteManagementUsers")}
     );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("Administrator", $Credential.Password);
@@ -65,12 +74,20 @@ configuration ConfigurationDC
             }
         }
 
+        xIPAddress "IA-Ip"
+        {
+            IPAddress = "$NetworkPrefix.10"
+            SubnetMask = 24
+            InterfaceAlias = "Ethernet"
+            AddressFamily = "IPv4"
+        }
+
         xDnsServerAddress "DSA-DnsConfiguration"
         { 
             Address = "127.0.0.1"
             InterfaceAlias = "Ethernet"
             AddressFamily = "IPv4"
-            DependsOn = "[WindowsFeature]WF-DNS"
+            DependsOn = "[xIPAddress]IA-Ip", "[WindowsFeature]WF-AD-Domain-Services"
         }
 
         xADDomain "AD-FirstDC"
@@ -114,31 +131,28 @@ configuration ConfigurationDC
         }
 
         $groups | ForEach-Object {
-            if($_.Name -eq "Administrators")
+            xADGroup "ADG-$($_.Name)"
             {
-                xADGroup "ADG-$($_.Name)"
-                {
-                    GroupName = $_.Name
-                    GroupScope = "DomainLocal"
-                    Ensure = "Present"
-                    Path = $_.Path
-                    MembersToInclude = $_.Members
-                    DomainController = "$($Node.NodeName).$($DomainName)"
-                    DependsOn = "[xADUser]ADU-christoph", "[xADUser]ADU-s-om-msaa"
-                }
+                GroupName = $_.Name
+                GroupScope = "Global"
+                Ensure = "Present"
+                Path = $_.Path
+                MembersToInclude = $_.Members
+                DomainController = "$($Node.NodeName).$($DomainName)"
+                DependsOn = "[xADUser]ADU-christoph", "[xADUser]ADU-s-om-msaa"
             }
-            else
+        }
+
+        $builtinGroups | ForEach-Object {
+            xADGroup "ADG-$($_.Name)"
             {
-                xADGroup "ADG-$($_.Name)"
-                {
-                    GroupName = $_.Name
-                    GroupScope = "Global"
-                    Ensure = "Present"
-                    Path = $_.Path
-                    MembersToInclude = $_.Members
-                    DomainController = "$($Node.NodeName).$($DomainName)"
-                    DependsOn = "[xADUser]ADU-christoph", "[xADUser]ADU-s-om-msaa"
-                }
+                GroupName = $_.Name
+                GroupScope = "DomainLocal"
+                Ensure = "Present"
+                Path = $_.Path
+                MembersToInclude = $_.Members
+                DomainController = "$($Node.NodeName).$($DomainName)"
+                DependsOn = "[xADUser]ADU-christoph", "[xADUser]ADU-s-om-msaa", "[xADGroup]ADG-g-RemoteDesktopUsers", "[xADGroup]ADG-g-RemoteManagementUsers"
             }
         }
     }

@@ -31,6 +31,9 @@
     <Folder Include="Assets\DscModules\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigurationOR.ps1" />
+    <Compile Include="ConfigurationOM.ps1" />
+    <Compile Include="ConfigurationDB.ps1" />
     <Compile Include="ConfigurationLcm.ps1" />
     <Compile Include="ConfigurationDC.ps1" />
     <Compile Include="Invoke-LabBootstrapper.ps1" />
