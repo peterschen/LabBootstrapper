@@ -1,5 +1,5 @@
 # Intro
-This repository contains resources which can be used to quickly and easily hydrate a new lab environment based on Windows Server 2012 R"or Windows Server 2016.
+This repository contains resources which can be used to quickly and easily hydrate a new lab environment based on Windows Server 2012 R2 or Windows Server 2016.
 
 # Overview
 The hydration process consists of a main script which controls the creation of required VHDs and VMs. All configuration in the VMs is done by PowerShell Desired State Configuration which is injected into the respective VHD. The script can be run even after the initial deployment when the DSC configuration has changed to adapt an existing setup instead of creating a new one from scratch.
