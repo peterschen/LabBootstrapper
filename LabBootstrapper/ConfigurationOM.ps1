@@ -53,6 +53,23 @@ configuration ConfigurationOM
             Name = $Node.NodeName
             DomainName = $DomainName
             Credential = $domainCredential
+            DependsOn = "[xDnsServerAddress]DSA-DnsConfiguration"
+        }
+
+        Group "G-RemoteDesktopUsers"
+        {
+            GroupName = "Remote Desktop Users"
+            Credential = $domainCredential
+            MembersToInclude = "$DomainName\g-RemoteDesktopUsers"
+            DependsOn = "[xComputer]C-JoinDomain"
+        }
+
+        Group "G-RemoteManagementUsers"
+        {
+            GroupName = "Remote Management Users"
+            Credential = $domainCredential
+            MembersToInclude = "$DomainName\g-RemoteManagementUsers"
+            DependsOn = "[xComputer]C-JoinDomain"
         }
     }
 }

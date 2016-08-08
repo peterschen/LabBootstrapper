@@ -53,6 +53,7 @@ configuration ConfigurationDB
             Name = $Node.NodeName
             DomainName = $DomainName
             Credential = $domainCredential
+            DependsOn = "[xDnsServerAddress]DSA-DnsConfiguration"
         }
 
         Group "G-RemoteDesktopUsers"
