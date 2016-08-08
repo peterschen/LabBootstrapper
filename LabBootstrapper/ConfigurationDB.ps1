@@ -32,6 +32,18 @@ configuration ConfigurationDB
             }
         }
 
+        xFirewall "F-FirewallSqlEngine"
+        {
+            Name = "SqlFirewallRule"
+            DisplayName = "SQL Engine (tcp/1433)"
+            Ensure = "Present"
+            Enabled = "True"
+            Profile = ("Domain", "Private")
+            Direction = "InBound"
+            LocalPort = "1433"
+            Protocol = "TCP"
+        }
+
         xIPAddress "IA-Ip"
         {
             IPAddress = "$NetworkPrefix.20"
