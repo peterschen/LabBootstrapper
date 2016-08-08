@@ -51,12 +51,13 @@ configuration ConfigurationDC
     $groups = @(
         @{Name = "g-sql-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")},
         @{Name = "g-om-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)", "$($userOmMsaa.Name)")},
+        @{Name = "g-LocalAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
         @{Name = "g-RemoteDesktopUsers"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
         @{Name = "g-RemoteManagementUsers"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
     );
 
     $builtinGroups = @(
-        @{Name = "Administrators"; Members =@("$($userChristoph.Name)")},
+        @{Name = "Administrators"; Members =@("g-LocalAdmins")},
         @{Name = "Remote Desktop Users"; Members =@("g-RemoteDesktopUsers")}
         @{Name = "Remote Management Users"; Members =@("g-RemoteManagementUsers")}
     );

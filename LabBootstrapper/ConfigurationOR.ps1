@@ -56,6 +56,14 @@ configuration ConfigurationOR
             DependsOn = "[xDnsServerAddress]DSA-DnsConfiguration"
         }
 
+        Group "G-Administrators"
+        {
+            GroupName = "Administrators"
+            Credential = $domainCredential
+            MembersToInclude = "$DomainName\g-LocalAdmins"
+            DependsOn = "[xComputer]C-JoinDomain"
+        }
+
         Group "G-RemoteDesktopUsers"
         {
             GroupName = "Remote Desktop Users"
