@@ -60,7 +60,7 @@ configuration ConfigurationOM
         {
             GroupName = "Administrators"
             Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-LocalAdmins"
+            MembersToInclude = @("$DomainName\g-LocalAdmins", "$DomainName\s-om-sdk")
             DependsOn = "[xComputer]C-JoinDomain"
         }
 
