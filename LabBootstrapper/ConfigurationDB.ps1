@@ -44,6 +44,41 @@ configuration ConfigurationDB
             Protocol = "TCP"
         }
 
+        xFirewall "F-RemoteSvcAdmin-In-TCP"
+        {
+            Name = "RemoteSvcAdmin-In-TCP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+
+        xFirewall "F-FPS-NB_Datagram-In-UDP"
+        {
+            Name = "FPS-NB_Datagram-In-UDP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+
+        xFirewall "F-FPS-NB_Name-In-UDP"
+        {
+            Name = "FPS-NB_Name-In-UDP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+
+        xFirewall "F-FPS-NB_Session-In-TCP"
+        {
+            Name = "FPS-NB_Session-In-TCP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+
+        xFirewall "F-FPS-SMB-In-TCP"
+        {
+            Name = "FPS-SMB-In-TCP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+
         xIPAddress "IA-Ip"
         {
             IPAddress = "$NetworkPrefix.20"
