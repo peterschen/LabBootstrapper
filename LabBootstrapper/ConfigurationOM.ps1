@@ -88,7 +88,7 @@ configuration ConfigurationOM
         {
             GroupName = "Administrators"
             Credential = $domainCredential
-            MembersToInclude = @("$DomainName\g-LocalAdmins", "$DomainName\s-om-sdk")
+            MembersToInclude = @("$DomainName\g-LocalAdmins", "$DomainName\s-om-sdk", "$DomainName\s-om-msaa")
             DependsOn = "[xComputer]C-JoinDomain"
         }
 
