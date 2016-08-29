@@ -7,8 +7,9 @@
         "OM",
         "OR"
     ),
-    [string] $VhdPath,
     [string] $VmPath,
+    [string] $VhdPath,
+    [string] $MasterVhdPath,
     [string] $HvSwitchName,
     [string] $OsProductKey = "MFY9F-XBN2F-TYFMP-CCV49-RMYVH",
     [string] $OsOrganization = $LabPrefix,
@@ -43,7 +44,7 @@ function Test-Prerequisites
             throw "Hyper-V PowerShell module could not be loaded";
         }
 
-        if(-not (Test-Path -Path $VhdPath))
+        if(-not (Test-Path -Path $MasterVhdPath))
         {
             throw "VHD path does not exists";
         }
@@ -146,7 +147,7 @@ function Copy-DscConfiguration
         . ".\Configuration$ComputerName.ps1";
 
         $workDirectory = "$env:TEMP\LabBootstrapper";
-        $credential = New-Object System.Management.Automation.PSCredential "Administrator", (ConvertTo-SecureString -AsPlainText -Force $Password);
+        $credential = New-Object PSCredential "Administrator", (ConvertTo-SecureString -AsPlainText -Force $Password);
         $dscConfiguration = "Configuration$($vmName) -DomainName '$($LabPrefix.ToLower()).lab' -Credential `$credential -NetworkPrefix `$NetworkPrefix -OutputPath '$workDirectory' -ConfigurationData @{AllNodes =@(@{NodeName = '$vmName'; PSDscAllowPlainTextPassword = `$true; PSDscAllowDomainUser = `$true})}";
         $dscConfigurationScript = [scriptblock]::Create($dscConfiguration);
         Invoke-Command -ScriptBlock $dscConfigurationScript | Out-Null;
@@ -156,7 +157,7 @@ function Copy-DscConfiguration
     }
 }
 
-function WriteLog-Debug
+function Write-LogDebug
 {
     param
     (
@@ -170,7 +171,7 @@ function WriteLog-Debug
     }
 }
 
-function WriteLog-Verbose
+function Write-LogVerbose
 {
     param
     (
@@ -184,7 +185,7 @@ function WriteLog-Verbose
     }
 }
 
-function WriteLog-Information
+function Write-LogVerbose
 {
     param
     (
@@ -218,27 +219,27 @@ try
     foreach($vmName in $LabVms)
     {
         $proceed = $true;
-        $newVhdPath = "$VmPath\$($LabPrefix)-$($vmName).vhdx";
+        $newVhdPath = "$VhdPath\$($LabPrefix)-$($vmName).vhdx";
         
-        WriteLog-Verbose -Prefix $vmName -Message "Start processing";
+        Write-LogVerbose -Prefix $vmName -Message "Start processing";
 
         # Check if the VM exists
         $vm = Get-VM -Name "$($LabPrefix)-$($vmName)" -ErrorAction SilentlyContinue;
         if(-not $vm)
         {
-            WriteLog-Verbose -Prefix $vmName -Message "VM does not exists";
+            Write-LogVerbose -Prefix $vmName -Message "VM does not exists";
 
             # Test if the VHD exists
             if(-not (Test-Path -Path $newVhdPath))
             {
-                $newVhd = New-VHD -ParentPath $VhdPath -Path $newVhdPath -Differencing -SizeBytes 80GB;
+                $newVhd = New-VHD -ParentPath $MasterVhdPath -Path $newVhdPath -Differencing -SizeBytes 80GB;
                 $newVhdPath = $newVhd.Path;
 
                 $requireUnattend = $true;
             }
             else
             {
-                WriteLog-Information -Prefix $vmName -Message "VHD $($newVhdPath) already exists";
+                Write-LogVerbose -Prefix $vmName -Message "VHD $($newVhdPath) already exists";
             }
             
             $vm = New-VM -Name "$($LabPrefix)-$($vmName)" -SwitchName $HvSwitchName -Path $VmPath -VHDPath $newVhdPath -MemoryStartupBytes 1GB -Generation 2;
@@ -246,7 +247,7 @@ try
         }
         else
         {
-            WriteLog-Information -Prefix $vmName -Message "Skipping VM creation for $($vmName) as it already exists";
+            Write-LogVerbose -Prefix $vmName -Message "Skipping VM creation for $($vmName) as it already exists";
         }
 
         if($proceed)
@@ -254,52 +255,52 @@ try
             # Stop VM before mouting the VHD
             if($vm.State -ne "Off")
             {
-                WriteLog-Verbose -Prefix $vmName -Message "Shutting down running VM";
+                Write-LogVerbose -Prefix $vmName -Message "Shutting down running VM";
                 Stop-VM -VM $vm;
             }
 
             try
             {
-                WriteLog-Debug -Prefix $vmName -Message "Mounting VHD $($newVhdPath)";
+                Write-LogDebug -Prefix $vmName -Message "Mounting VHD $($newVhdPath)";
 
                 # Mount VHD to inject unattend XML, copy DSC modules and copy DSC meta info and documents
                 $mountPoint = (Get-Disk -Number (Mount-VHD -Path $newVhdPath -Passthru).DiskNumber | Get-Partition | Where-Object {$_.Type -eq "Basic"}).DriveLetter;
 
                 if($requireUnattend)
                 {
-                    WriteLog-Verbose -Prefix $vmName -Message "Copying unattend.xml";
+                    Write-LogVerbose -Prefix $vmName -Message "Copying unattend.xml";
                     Copy-UnattendFile -Path "$($mountPoint):\" -ComputerName $vmName -ProductKey $OsProductKey -Organization $OsOrganization `
                         -Owner $OsOwner -Timezone $OsTimezone -UiLanguage $OsUiLanguage -InputLanguage $OsInputLanguage -Password $OsPassword;
                 }
             
                 # Copy DSC modules
-                WriteLog-Verbose -Prefix $vmName -Message "Copying DSC modules";
+                Write-LogVerbose -Prefix $vmName -Message "Copying DSC modules";
                 Copy-DscModules -Path "$($mountPoint):\Program Files\WindowsPowerShell\Modules";
 
                 # Build and copy DSC meta configuration
-                WriteLog-Verbose -Prefix $vmName -Message "Building and copying LCM configuration";
+                Write-LogVerbose -Prefix $vmName -Message "Building and copying LCM configuration";
                 Copy-DscMetaConfiguration -ComputerName $vmName -Path "$($mountPoint):\Windows\system32\Configuration";
 
                 # Build vm specific DSC configuration
-                WriteLog-Verbose -Prefix $vmName -Message "Building and copying DSC configuration";
+                Write-LogVerbose -Prefix $vmName -Message "Building and copying DSC configuration";
                 Copy-DscConfiguration -ComputerName $vmName -Path "$($mountPoint):\Windows\system32\Configuration" -Password $OsPassword;
             }
             catch
             {
-                $proceeed = $false;
+                $proceed = $false;
                 throw $_;
             }
             finally
             {
                 # Make sure we dismount the VHD in any case
                 Dismount-VHD -Path $newVhdPath;
-                WriteLog-Debug -Prefix $vmName -Message "Dismounting VHD $($newVhdPath)";
+                Write-LogDebug -Prefix $vmName -Message "Dismounting VHD $($newVhdPath)";
             }
         }
 
         if($proceed)
         {
-            WriteLog-Verbose -Prefix $vmName -Message "Starting VM";
+            Write-LogVerbose -Prefix $vmName -Message "Starting VM";
 
             # Start VM
             Start-VM -VM $vm -ErrorAction SilentlyContinue;
