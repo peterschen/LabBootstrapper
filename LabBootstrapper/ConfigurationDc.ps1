@@ -15,7 +15,10 @@ configuration ConfigurationDC
         [int] $RetryInterval = 30
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, xNetworking, xActiveDirectory, xPSDesiredStateConfiguration;
+    Import-DscResource -ModuleName @{ModuleName="PSDesiredStateConfiguration"},
+        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
+        @{ModuleName="xComputerManagement";ModuleVersion="1.7.0.0"},
+        @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="3.12.0.0"}
 
     $domainPrefix = $DomainName.Split(".")[0];
 

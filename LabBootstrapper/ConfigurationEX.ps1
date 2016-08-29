@@ -12,7 +12,9 @@ configuration ConfigurationEX
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, xNetworking, xComputerManagement;
+    Import-DscResource -ModuleName @{ModuleName="PSDesiredStateConfiguration";ModuleVersion="3.12.0.0"},
+        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
+        @{ModuleName="xComputerManagement";ModuleVersion="1.7.0.0"} 
 
     $domainPrefix = $DomainName.Split(".")[0];
 
