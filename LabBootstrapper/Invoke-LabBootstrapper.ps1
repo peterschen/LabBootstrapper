@@ -27,6 +27,24 @@ $VerbosePreference = "Continue";
 # Source libraries
 . ".\LibUnattend.ps1";
 
+$Script:PATH_DSCMODULES = "Assets\DscModules";
+
+$Script:PACKAGES = @{
+    "xActiveDirectory" = "2.12.0.0"
+    "xComputerManagement" = "1.7.0.0"
+    "xNetworking" = "2.11.0.0"
+    "xPSDesiredStateConfiguration" = "3.12.0.0"
+};
+
+$Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
+$Script:PLACEHOLDER_PRODUCTKEY = "PLACEHOLDER_PRODUCTKEY";
+$Script:PLACEHOLDER_ORGANIZATION = "PLACEHOLDER_ORGANIZATION";
+$Script:PLACEHOLDER_OWNER = "PLACEHOLDER_OWNER";
+$Script:PLACEHOLDER_TIMEZONE = "PLACEHOLDER_TIMEZONE";
+$Script:PLACEHOLDER_UILANGUAGE = "PLACEHOLDER_UILANGUAGE";
+$Script:PLACEHOLDER_INPUTLANGUAGE = "PLACEHOLDER_INPUTLANGUAGE";
+$Script:PLACEHOLDER_PASSWORD = "PLACEHOLDER_PASSWORD";
+
 function Test-Prerequisites
 {
     param
@@ -62,6 +80,27 @@ function Test-Prerequisites
         if(-not (Get-VMSwitch -Name $HvSwitchName -ErrorAction SilentlyContinue))
         {
             throw "Hyper-V switch could not be found";
+        }
+    }
+}
+
+function Get-DscModules
+{
+    param
+    (
+    );
+
+    process
+    {
+        foreach($package in $Script:PACKAGES.Keys)
+        {
+            $version = $Script:PACKAGES[$package];
+            $path = "$($Script:PATH_DSCMODULES)\$($package)\$($version)";
+
+            if(-not (Test-Path -Path $path))
+            {
+                Save-Package -Name $package -RequiredVersion $version -Path $Script:PATH_DSCMODULES;
+            }
         }
     }
 }
@@ -199,19 +238,13 @@ function Write-LogVerbose
     }
 }
 
-$Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
-$Script:PLACEHOLDER_PRODUCTKEY = "PLACEHOLDER_PRODUCTKEY";
-$Script:PLACEHOLDER_ORGANIZATION = "PLACEHOLDER_ORGANIZATION";
-$Script:PLACEHOLDER_OWNER = "PLACEHOLDER_OWNER";
-$Script:PLACEHOLDER_TIMEZONE = "PLACEHOLDER_TIMEZONE";
-$Script:PLACEHOLDER_UILANGUAGE = "PLACEHOLDER_UILANGUAGE";
-$Script:PLACEHOLDER_INPUTLANGUAGE = "PLACEHOLDER_INPUTLANGUAGE";
-$Script:PLACEHOLDER_PASSWORD = "PLACEHOLDER_PASSWORD";
-
 try
 {
     # Validation
     Test-Prerequisites;
+
+    # Download required DSC modules
+    Get-DscModules;
 
     $requireUnattend = $false;
 
