@@ -19,8 +19,6 @@ configuration ConfigurationEX
     $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
-        "AS-HTTP-Activation",
-        "Desktop-Experience",
         "NET-Framework-45-Features",
         "RPC-over-HTTP-proxy",
         "RSAT-Clustering",
