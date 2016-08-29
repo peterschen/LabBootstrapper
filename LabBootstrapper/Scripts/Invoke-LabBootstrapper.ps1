@@ -27,7 +27,8 @@ $VerbosePreference = "Continue";
 # Source libraries
 . ".\LibUnattend.ps1";
 
-$Script:PATH_DSCMODULES = "Assets\DscModules";
+$Script:PATH_CONFIGURATIONS = "..\Configurations"
+$Script:PATH_DSCMODULES = "..\Assets\DscModules";
 
 $Script:PACKAGES = @{
     "xActiveDirectory" = "2.13.0.0"
@@ -148,7 +149,7 @@ function Copy-DscModules
 
     process
     {
-        Copy-Item -Path ".\Assets\DscModules\*" -Destination $Path -Recurse -Force;
+        Copy-Item -Path "$($Script:PATH_DSCMODULES)\*" -Destination $Path -Recurse -Force;
     }
 }
 
@@ -163,7 +164,7 @@ function Copy-DscMetaConfiguration
     process
     {
         # dot-source DSC meta configuration if not done yet
-        . ".\ConfigurationLcm.ps1";
+        . "$($Script:PATH_CONFIGURATIONS)\ConfigurationLcm.ps1";
 
         $workDirectory = "$env:TEMP\LabBootstrapper";
         ConfigurationLcm -ComputerName $ComputerName -OutputPath $workDirectory | Out-Null;
@@ -183,7 +184,7 @@ function Copy-DscConfiguration
     process
     {
         # dot-source DSC configuration if not done yet
-        . ".\Configuration$ComputerName.ps1";
+        . "$($Script:PATH_CONFIGURATIONS)\Configuration$ComputerName.ps1";
 
         $workDirectory = "$env:TEMP\LabBootstrapper";
         $credential = New-Object PSCredential "Administrator", (ConvertTo-SecureString -AsPlainText -Force $Password);

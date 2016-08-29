@@ -50,7 +50,8 @@ configuration ConfigurationEX
         "Web-Windows-Auth",
         "Web-WMI",
         "Windows-Identity-Foundation",
-        "RSAT-ADDS"
+        "RSAT-ADDS",
+        "Server-Media-Foundation"
     );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
