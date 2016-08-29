@@ -30,10 +30,10 @@ $VerbosePreference = "Continue";
 $Script:PATH_DSCMODULES = "Assets\DscModules";
 
 $Script:PACKAGES = @{
-    "xActiveDirectory" = "2.12.0.0"
-    "xComputerManagement" = "1.7.0.0"
+    "xActiveDirectory" = "2.13.0.0"
+    "xComputerManagement" = "1.8.0.0"
     "xNetworking" = "2.11.0.0"
-    "xPSDesiredStateConfiguration" = "3.12.0.0"
+    "xPSDesiredStateConfiguration" = "3.13.0.0"
 };
 
 $Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
