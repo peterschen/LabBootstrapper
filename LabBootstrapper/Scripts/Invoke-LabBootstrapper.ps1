@@ -25,10 +25,11 @@ $ErrorActionPreference = "Stop";
 $VerbosePreference = "Continue";
 
 # Source libraries
-. ".\LibUnattend.ps1";
+. "..\Scripts\LibUnattend.ps1";
 
 $Script:PATH_CONFIGURATIONS = "..\Configurations"
-$Script:PATH_DSCMODULES = "..\Assets\DscModules";
+$Script:PATH_ASSETS = "..\Assets";
+$Script:PATH_DSCMODULES = "$($Script:PATH_ASSETS)\DscModules";
 
 $Script:PACKAGES = @{
     "xActiveDirectory" = "2.13.0.0"
@@ -73,7 +74,7 @@ function Test-Prerequisites
             throw "VM path does not exists";
         }
 
-        if(-not (Test-Path -Path ".\Assets"))
+        if(-not (Test-Path -Path $Script:PATH_ASSETS))
         {
             throw "Assets could not be found";
         }
