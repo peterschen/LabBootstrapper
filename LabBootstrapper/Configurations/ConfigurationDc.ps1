@@ -15,7 +15,7 @@ configuration ConfigurationDC
         [int] $RetryInterval = 30
     );
 
-    IImport-DscResource -ModuleName PSDesiredStateConfiguration,
+    Import-DscResource -ModuleName PSDesiredStateConfiguration,
         @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
         @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
         @{ModuleName="xActiveDirectory";ModuleVersion="2.13.0.0"}
@@ -53,9 +53,9 @@ configuration ConfigurationDC
     );
 
     $groups = @(
-        @{Name = "g-sql-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")},
-        @{Name = "g-om-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)", "$($userOmMsaa.Name)")},
-        @{Name = "g-or-Admins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")},
+        @{Name = "g-SqlAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")},
+        @{Name = "g-OmAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)", "$($userOmMsaa.Name)")},
+        @{Name = "g-OrAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")},
         @{Name = "g-LocalAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
         @{Name = "g-RemoteDesktopUsers"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
         @{Name = "g-RemoteManagementUsers"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
