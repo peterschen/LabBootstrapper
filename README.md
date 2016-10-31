@@ -61,7 +61,7 @@ LabVms | No | Name of the VMs to create | @("DC", "DB", "OM", "OR")
 VhdPath | Yes | Path of the parent VHD | -
 VmPath | Yes | Path where the VHDs and VMs should be placed | -
 HvSwitchName | Yes | Hyper-V switch name to use | -
-OsProductKey | No | Product key for the OS customization (defaults to Windows Server 2016 TP5 KMS activation key | MFY9F-XBN2F-TYFMP-CCV49-RMYVH
+OsProductKey | No | Product key for the OS customization (defaults to Windows Server 2016 KMS activation key | WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY
 OsOrganization | No | Organization used for OS customization | $LabPrefix
 OsOwner | No | Owner used for OS customization | $LabPrefix
 OsTimezone | No  | Timezone used for OS customization | W. Europe Standard Time
