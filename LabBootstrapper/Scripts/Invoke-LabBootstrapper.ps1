@@ -42,7 +42,7 @@ $Script:PACKAGES = @{
     "xPSDesiredStateConfiguration" = "3.13.0.0"
     "xSQLServer" = "2.0.0.0"
     "xCredSSP" = "1.1.0.0"
-    "xSCOM" = "1.3.3.0"
+    # "xSCOM" = "1.3.3.0"
 };
 
 $Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
