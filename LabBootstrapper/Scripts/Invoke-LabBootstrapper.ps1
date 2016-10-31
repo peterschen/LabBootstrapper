@@ -10,8 +10,9 @@
     [string] $VmPath,
     [string] $VhdPath,
     [string] $MasterVhdPath,
+    [string] $BitsPath,
     [string] $HvSwitchName,
-    [string] $OsProductKey = "MFY9F-XBN2F-TYFMP-CCV49-RMYVH",
+    [string] $OsProductKey = "WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY",
     [string] $OsOrganization = $LabPrefix,
     [string] $OsOwner = $LabPrefix,
     [string] $OsTimezone = "W. Europe Standard Time",
@@ -24,11 +25,14 @@
 $ErrorActionPreference = "Stop";
 $VerbosePreference = "Continue";
 
-# Source libraries
-. "..\Scripts\LibUnattend.ps1";
+# Determine base path from invokation
+$basePath = Split-Path -Parent $(Split-Path -Parent -Resolve $MyInvocation.MyCommand.Path);
 
-$Script:PATH_CONFIGURATIONS = "..\Configurations"
-$Script:PATH_ASSETS = "..\Assets";
+# Source libraries
+. "$basePath\Scripts\LibUnattend.ps1";
+
+$Script:PATH_CONFIGURATIONS = "$basePath\Configurations"
+$Script:PATH_ASSETS = "$basePath\Assets";
 $Script:PATH_DSCMODULES = "$($Script:PATH_ASSETS)\DscModules";
 
 $Script:PACKAGES = @{
@@ -36,6 +40,9 @@ $Script:PACKAGES = @{
     "xComputerManagement" = "1.8.0.0"
     "xNetworking" = "2.11.0.0"
     "xPSDesiredStateConfiguration" = "3.13.0.0"
+    "xSQLServer" = "2.0.0.0"
+    "xCredSSP" = "1.1.0.0"
+    "xSCOM" = "1.3.3.0"
 };
 
 $Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
@@ -71,7 +78,14 @@ function Test-Prerequisites
 
         if(-not (Test-Path -Path $VmPath))
         {
-            throw "VM path does not exists";
+            try
+            {
+                New-Item -Path $VhdPath -ItemType Directory | Out-Null;
+            }
+            catch [System.Exception]
+            {
+                throw "VM path does not exists and could not be created";
+            }
         }
 
         if(-not (Test-Path -Path $Script:PATH_ASSETS))
@@ -198,6 +212,29 @@ function Copy-DscConfiguration
     }
 }
 
+function Copy-Bits
+{
+    param
+    (
+        [string] $ComputerName,
+        [string] $SourcePath,
+        [string] $DestinationPath
+    );
+
+    process
+    {
+        if(Test-Path "$SourcePath\$ComputerName")
+        {
+            if(-not (Test-Path $DestinationPath))
+            {
+                New-Item -Path $DestinationPath -ItemType Directory | Out-Null;
+            }
+
+            Copy-Item -Path "$($SourcePath)\$($ComputerName)\*" -Destination $DestinationPath -Recurse -Force;
+        }
+    }
+}
+
 function Write-LogDebug
 {
     param
@@ -226,7 +263,7 @@ function Write-LogVerbose
     }
 }
 
-function Write-LogVerbose
+function Write-LogInformation
 {
     param
     (
@@ -237,6 +274,20 @@ function Write-LogVerbose
     process
     {
         Write-Information -Message "[$($Prefix)] $($Message)";
+    }
+}
+
+function Write-LogWarning
+{
+    param
+    (
+        [string] $Prefix,
+        [string] $Message
+    );
+
+    process
+    {
+        Write-Warning -Message "[$($Prefix)] $($Message)";
     }
 }
 
@@ -308,6 +359,10 @@ try
                         -Owner $OsOwner -Timezone $OsTimezone -UiLanguage $OsUiLanguage -InputLanguage $OsInputLanguage -Password $OsPassword;
                 }
             
+                # Copy bits
+                Write-LogVerbose -Prefix $vmName -Message "Copy bits";
+                Copy-Bits -ComputerName $vmName -SourcePath $BitsPath -DestinationPath "$($mountPoint):\LabBits";
+
                 # Copy DSC modules
                 Write-LogVerbose -Prefix $vmName -Message "Copying DSC modules";
                 Copy-DscModules -Path "$($mountPoint):\Program Files\WindowsPowerShell\Modules";
