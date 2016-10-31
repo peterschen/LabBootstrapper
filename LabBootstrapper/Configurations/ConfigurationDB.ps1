@@ -14,14 +14,18 @@ configuration ConfigurationDB
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration,
         @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
-        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"} 
+        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
+        @{ModuleName="xSQLServer";ModuleVersion="2.0.0.0"}
 
     $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
+        "NET-Framework-Core"
     );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
+    $agentCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-sql-agent", $Credential.Password);
+    $engineCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-sql-engine", $Credential.Password);
 
     Node DB
     {
@@ -32,18 +36,6 @@ configuration ConfigurationDB
                 Name = $feature
                 Ensure = "Present"
             }
-        }
-
-        xFirewall "F-FirewallSqlEngine"
-        {
-            Name = "SqlFirewallRule"
-            DisplayName = "SQL Engine (tcp/1433)"
-            Ensure = "Present"
-            Enabled = "True"
-            Profile = ("Domain", "Private")
-            Direction = "InBound"
-            LocalPort = "1433"
-            Protocol = "TCP"
         }
 
         xFirewall "F-RemoteSvcAdmin-In-TCP"
@@ -127,6 +119,57 @@ configuration ConfigurationDB
             Credential = $domainCredential
             MembersToInclude = "$DomainName\g-RemoteManagementUsers"
             DependsOn = "[xComputer]C-JoinDomain"
+        }
+
+        xSQLServerSetup "SSS-Default"
+        {
+            SourcePath = "C:\LabBits\SQL"
+            SetupCredential = $domainCredential
+            Features = "SQLENGINE,FULLTEXT"
+            InstanceName = "MSSQLSERVER"
+            SQLSysAdminAccounts = "$DomainName\g-SqlAdmins"
+            SQLSvcAccount = $engineCredential
+            AgtSvcAccount = $agentCredential
+            DependsOn = "[WindowsFeature]WF-NET-Framework-Core","[xComputer]C-JoinDomain"
+        }
+
+        xSqlServerFirewall "SSF-Firewall"
+        {
+            SourcePath = "C:\LabBits\SQL"
+            InstanceName = "MSSQLSERVER"
+            Features = "SQLENGINE,FULLTEXT"
+            DependsOn = "[xSqlServerSetup]SSS-Default"
+        }
+
+        xSQLServerPowerPlan "SSPP-PowerConfiguration"
+        {
+            Ensure = "Present"
+        }
+
+        xSQLServerMemory "SSM-MemoryConfiguration"
+        {
+            Ensure = "Present"
+            DynamicAlloc = $true
+            SQLInstanceName = "MSSQLSERVER"
+            DependsOn = "[xSqlServerSetup]SSS-Default"
+        }
+
+        xSQLServerMaxDop "SSMD-DopConfiguration"
+        {
+            Ensure = "Present"
+            DynamicAlloc = $true
+            SQLInstanceName = "MSSQLSERVER"
+            DependsOn = "[xSqlServerSetup]SSS-Default"
+        }
+
+        Package "P-SqlServerManagementStudio"
+        {
+            Ensure = "Present"
+            Name = "Microsoft SQL Server Management Studio - 16.5"
+            ProductID = ""
+            Path = "C:\LabBits\SSMS-Setup-ENU.exe"
+            Arguments = "/install /quiet"
+            DependsOn = "[xSQLServerSetup]SSS-Default"
         }
     }
 }
