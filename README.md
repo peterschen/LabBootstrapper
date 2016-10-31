@@ -18,11 +18,11 @@ The hydration process uses a parent VHD to create differencing disk. You can use
 ## Examples
 **Windows Server 2012 R2 (including KB3172614 and KB3066437):**
 
-``Convert-WindowsImage -SourcePath "Windows Server 2012 R2 x64.iso" -Edition Standard -VHDPath "server2012r2.vhdx" -SizeBytes 80GB -DiskLayout UEFI -Package Windows8.1-KB3172614-x64.msu,Win8.1AndW2K12R2-KB3066437-x64.msu -Verbose;``
+``Convert-WindowsImage -SourcePath "Windows Server 2012 R2 x64.iso" -Edition "ServerStandard" -VHDPath "server2012r2.vhdx" -SizeBytes 80GB -Package Windows8.1-KB3172614-x64.msu,Win8.1AndW2K12R2-KB3066437-x64.msu -Verbose;``
 
-**Windows Server 2016 TP5 (including KB3158987):**
+**Windows Server 2016 (including KB3197954):**
 
-``Convert-WindowsImage -SourcePath "Windows Server 2016 TP5 x64.iso" -Edition Standard -VHDPath "server2012r2.vhdx" -SizeBytes 80GB -DiskLayout UEFI -Package AMD64-all-windows10.0-kb3158987-x64_6b363d8ecc6ac98ca26396daf231017a258bfc94.msu -Verbose;``
+``Convert-WindowsImage -SourcePath "Windows Server 2016 x64.iso" -Edition "ServerStandard" -VHDPath "server2016.vhdx" -SizeBytes 80GB -Package AMD64-all-windows10.0-kb3197954-x64_74819c01705e7a4d0f978cc0fbd7bed6240642b0.msu -Verbose;``
 
 # Running the Bootstrapper
 The Bootstrapper comes with some parameters of which most are predefined and can be used as-is. If you want to customize your lab refer to the following table for available parameters.
@@ -47,9 +47,9 @@ NetworkPrefix | No | Network prefix used for VMs | 10.4.0
 
 ``Invoke-LabBootstrapper.ps1 -LabPrefix Test -VhdPath "server2012r2.vhdx' -VmPath C:\ -HvSwitchName "LAB" -OsProductKey "D2N9P-3P6X9-2R39C-7RTCD-MDVJX";``
 
-**Create a lab with Windows Server 2016 TP5:**
+**Create a lab with Windows Server 2016:**
 
-``Invoke-LabBootstrapper.ps1 -LabPrefix Test -VhdPath "server2016tp5.vhdx' -VmPath C:\ -HvSwitchName "LAB";``
+``Invoke-LabBootstrapper.ps1 -LabPrefix Test -VhdPath "server2016.vhdx' -VmPath C:\ -HvSwitchName "LAB";``
 
 # Node LCM configuration
 Each nodes' LCM is configured to the following:
