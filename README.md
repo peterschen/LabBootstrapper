@@ -36,7 +36,7 @@ The hydration process uses a parent VHD to create differencing disk. You can use
 ## Source preparation
 In order for the bootstrapper to copy the sources to the respective disk they need to be provided as follows:
 
-``<LabBootstrapper root>
+<pre>&lt;LabBootstrapper root&gt;
  |_ Assets
  |__ Bits
  |___ DB
@@ -49,7 +49,7 @@ In order for the bootstrapper to copy the sources to the respective disk they ne
  |_____ ReportViewer.msi (http://go.microsoft.com/fwlink/?LinkId=816564)
  |_____ SQLSysClrTypes.msi (https://www.microsoft.com/en-us/download/details.aspx?id=42295)
  |____ Source
- |_____ (extract Operations Manager iso here)``
+ |_____ (extract Operations Manager iso here)</pre>
 
 # Running the Bootstrapper
 The Bootstrapper comes with some parameters of which most are predefined and can be used as-is. If you want to customize your lab refer to the following table for available parameters.
