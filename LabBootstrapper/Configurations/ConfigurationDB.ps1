@@ -73,6 +73,20 @@ configuration ConfigurationDB
             Enabled = "True"
         }
 
+        xFirewall "F-WMI-RPCSS-In-TCP"
+        {
+            Name = "WMI-RPCSS-In-TCP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+
+        xFirewall "F-WMI-WINMGMT-In-TCP"
+        {
+            Name = "WMI-WINMGMT-In-TCP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+        
         xIPAddress "IA-Ip"
         {
             IPAddress = "$NetworkPrefix.20"
