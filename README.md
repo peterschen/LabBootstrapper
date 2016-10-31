@@ -60,6 +60,7 @@ LabPrefix | Yes | Prefix used for VM creation and domain name | -
 LabVms | No | Name of the VMs to create | @("DC", "DB", "OM", "OR")
 VhdPath | Yes | Path of the parent VHD | -
 VmPath | Yes | Path where the VHDs and VMs should be placed | -
+BitsPath | No | Path where the sources are located | .\Assets\Bits
 HvSwitchName | Yes | Hyper-V switch name to use | -
 OsProductKey | No | Product key for the OS customization (defaults to Windows Server 2016 KMS activation key | WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY
 OsOrganization | No | Organization used for OS customization | $LabPrefix
