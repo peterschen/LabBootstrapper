@@ -9,13 +9,22 @@ The overall process has the following steps:
 1. Stop VM
 2. Create VHD
 3. Create VM
-4. Copy unattend.xml, DSC modules, LCM configuration, DSC configuration
+4. Customization
+  1. Copy unattend.xml
+  2. Copy assets/bits required for this node
+  3. Copy DSC modules
+  4. Build and copy LCM configuration
+  5. Build and copy DSC configuration
 5. Start VM
 
 # Prerequisites
-The hydration process uses a parent VHD to create differencing disk. You can use ``Convert-WindowsImage.ps1`` to create an appropriate parent disk.
+The hydration process uses a parent VHD to create differencing disk. You can use ``Convert-WindowsImage.ps1`` to create an appropriate parent disk. Additionally when available the process copies sources to the target machine which will be installed by DSC during configuration. Currently the following sources are supported:
 
-## Examples
+* SQL Server 2016
+* SQL Server Management Studio 16.5
+* System Center Operations Manager 2016
+
+## Create Parent VHD
 **Windows Server 2012 R2 (including KB3172614 and KB3066437):**
 
 ``Convert-WindowsImage -SourcePath "Windows Server 2012 R2 x64.iso" -Edition "ServerStandard" -VHDPath "server2012r2.vhdx" -SizeBytes 80GB -Package Windows8.1-KB3172614-x64.msu,Win8.1AndW2K12R2-KB3066437-x64.msu -Verbose;``
@@ -23,6 +32,24 @@ The hydration process uses a parent VHD to create differencing disk. You can use
 **Windows Server 2016 (including KB3197954):**
 
 ``Convert-WindowsImage -SourcePath "Windows Server 2016 x64.iso" -Edition "ServerStandard" -VHDPath "server2016.vhdx" -SizeBytes 80GB -Package AMD64-all-windows10.0-kb3197954-x64_74819c01705e7a4d0f978cc0fbd7bed6240642b0.msu -Verbose;``
+
+## Source preparation
+In order for the bootstrapper to copy the sources to the respective disk they need to be provided as follows:
+
+``<LabBootstrapper root>
+ |_ Assets
+ |__ Bits
+ |___ DB
+ |___ SSMS-Setup.ENU.exe (http://go.microsoft.com/fwlink/?linkid=832812)
+ |____ SQL
+ |_____ Source
+ |______ (extract SQL Server 2016 iso here)
+ |___ OM
+ |____ prereqs
+ |_____ ReportViewer.msi (http://go.microsoft.com/fwlink/?LinkId=816564)
+ |_____ SQLSysClrTypes.msi (https://www.microsoft.com/en-us/download/details.aspx?id=42295)
+ |____ Source
+ |_____ (extract Operations Manager iso here)``
 
 # Running the Bootstrapper
 The Bootstrapper comes with some parameters of which most are predefined and can be used as-is. If you want to customize your lab refer to the following table for available parameters.
