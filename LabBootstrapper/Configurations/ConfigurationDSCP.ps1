@@ -66,7 +66,7 @@ configuration ConfigurationDSCP
 
         xIPAddress "IA-Ip"
         {
-            IPAddress = "$NetworkPrefix.100"
+            IPAddress = "$NetworkPrefix.60"
             SubnetMask = 24
             InterfaceAlias = "Ethernet"
             AddressFamily = "IPv4"
