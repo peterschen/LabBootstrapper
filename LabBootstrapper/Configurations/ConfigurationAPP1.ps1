@@ -12,9 +12,10 @@ configuration ConfigurationAPP1
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration,
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, 
         @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
-        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"} 
+        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
+        @{ModuleName="PackageManagementProviderResource";ModuleVersion="1.0.3"}
 
     $domainPrefix = $DomainName.Split(".")[0];
 
@@ -109,6 +110,22 @@ configuration ConfigurationAPP1
             Credential = $domainCredential
             MembersToInclude = "$DomainName\g-RemoteManagementUsers"
             DependsOn = "[xComputer]C-JoinDomain"
+        }
+
+        PSModule "PM-DockerProvider"
+        {
+            Ensure = "Present"
+            Name = "DockerMsftProvider"
+            InstallationPolicy = "trusted"
+            Repository = "PSGallery"
+        }
+
+        PackageManagement "PM-Docker"
+        {
+            Ensure = "Present"
+            Name = "docker"
+            ProviderName = "DockerMsftProvider"
+            DependsOn = "[PSModule]PM-DockerProvider"
         }
     }
 }
