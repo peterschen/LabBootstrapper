@@ -1,4 +1,4 @@
-configuration ConfigurationAPP1
+configuration ConfigurationAPP4
 {
     param 
     ( 
@@ -25,7 +25,7 @@ configuration ConfigurationAPP1
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
 
-    Node APP1
+    Node APP4
     {
         foreach($feature in $features)
         {
@@ -57,6 +57,13 @@ configuration ConfigurationAPP1
             Enabled = "True"
         }
 
+        xFirewall "F-FPS-SMB-In-TCP"
+        {
+            Name = "FPS-SMB-In-TCP"
+            Ensure = "Present"
+            Enabled = "True"
+        }
+
         xFirewall "F-Docker"
         {
             Name = "Docker"
@@ -69,21 +76,9 @@ configuration ConfigurationAPP1
             Protocol = "tcp"
         }
 
-        xFirewall "F-DockerSwarmMaster"
-        {
-            Name = "DockerSwarmMaster"
-            DisplayName = "Docker Swarm Master (tcp/3375)"
-            Ensure = "Present"
-            Enabled = "True"
-            Profile = ("Domain", "Private", "Public")
-            Direction = "Inbound"
-            LocalPort = 3375
-            Protocol = "tcp"
-        }
-
         xIPAddress "IA-Ip"
         {
-            IPAddress = "$NetworkPrefix.70"
+            IPAddress = "$NetworkPrefix.73"
             SubnetMask = 24
             InterfaceAlias = "Ethernet"
             AddressFamily = "IPv4"
@@ -189,7 +184,9 @@ configuration ConfigurationAPP1
                 $token = Get-Content C:\LabBits\swarm-token.txt;
 
                 $ip = (Get-NetIPAddress -AddressFamily IPv4 `
-                    | Where-Object -FilterScript { $_.InterfaceAlias -eq "vEthernet (HNS Internal NIC)" }
+                    | Where-Object -FilterScript { $_.InterfaceAlias -ne "vEthernet (HNS Internal NIC)" } `
+                    | Where-Object -FilterScript { $_.IPAddress -ne "127.0.0.1" } `
+                    | Where-Object -FilterScript { -not $_.IPAddress.StartsWith("10.0.1.") }
                 ).IPAddress;
 
                 docker pull stefanscherer/swarm-windows:latest-nano
@@ -201,41 +198,6 @@ configuration ConfigurationAPP1
             }
             Credential = $domainCredential
             DependsOn = "[Script]S-RebootDocker", "[File]F-SwarmToken"
-        }
-
-        Script "S-RunSwarmMaster"
-        {
-            GetScript = { @{ Result = "" } }
-            SetScript = {
-                $ErrorActionPreference = "SilentlyContinue";
-                $token = Get-Content C:\LabBits\swarm-token.txt;
-
-                docker pull stefanscherer/swarm-windows:latest-nano
-                docker run -d --name=swarm-master --restart=always -p 3375:2375 stefanscherer/swarm-windows:latest-nano manage "token://$($token)";
-            }
-            TestScript = {
-                $agentContainer = docker ps -aq --filter "name=swarm-master";
-                return -not [string]::IsNullOrEmpty($agentContainer);
-            }
-            Credential = $domainCredential
-            DependsOn = "[Script]S-RebootDocker", "[File]F-SwarmToken"
-        }
-
-        Script "S-RunPortainer"
-        {
-            GetScript = { @{ Result = "" } }
-            SetScript = {
-                $ErrorActionPreference = "SilentlyContinue";
-                $ip = $(docker inspect --format '{{ json .NetworkSettings.Networks.nat.IPAddress }}' swarm-master);
-                docker pull portainer/portainer:windows
-                docker run -d --name=portainer --restart=always -p 80:9000 portainer/portainer:windows -H tcp://$($ip):2375 --swarm
-            }
-            TestScript = {
-                $agentContainer = docker ps -aq --filter "name=portainer";
-                return -not [string]::IsNullOrEmpty($agentContainer);
-            }
-            Credential = $domainCredential
-            DependsOn = "[Script]S-RunSwarmMaster"
         }
     }
 }
