@@ -11,8 +11,7 @@ configuration ConfigurationLcm
     {
         Settings
         {
-            ConfigurationModeFrequencyMins = 2
-            RefreshFrequencyMins = 10
+            ConfigurationModeFrequencyMins = 15 
             RebootNodeIfNeeded = $true
             ConfigurationMode = "ApplyAndAutoCorrect"            
             ActionAfterReboot = "ContinueConfiguration"
