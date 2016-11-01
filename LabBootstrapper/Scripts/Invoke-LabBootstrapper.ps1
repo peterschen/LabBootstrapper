@@ -43,6 +43,7 @@ $Script:PACKAGES = @{
     "xSQLServer" = "2.0.0.0"
     "xCredSSP" = "1.1.0.0"
     "xSCOM" = "1.3.3.0"
+    "PackageManagementProviderResource" = "1.0.3"
 };
 
 $Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
