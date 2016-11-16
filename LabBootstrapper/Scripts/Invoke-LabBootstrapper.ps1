@@ -118,6 +118,11 @@ function Get-DscModules
             {
                 Save-Package -Name $package -RequiredVersion $version -Path $Script:PATH_DSCMODULES;
             }
+
+            if(-not (Get-InstalledModule -Name $package -RequiredVersion $version))
+            {
+                Install-Module -Name $package -RequiredVersion $version;
+            }
         }
     }
 }
