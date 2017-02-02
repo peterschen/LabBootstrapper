@@ -163,6 +163,7 @@ configuration ConfigurationDC
                 DomainAdministratorCredential = $domainCredential
                 UserName = $_.Name
                 Password = $domainCredential
+                PasswordNeverExpires = $true
                 Ensure = "Present"
                 Path = $_.Path
                 DependsOn = "[xADOrganizationalUnit]ADOU-Services","[xADOrganizationalUnit]ADOU-Users"
