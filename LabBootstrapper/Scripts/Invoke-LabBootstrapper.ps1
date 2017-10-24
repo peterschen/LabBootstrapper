@@ -26,7 +26,7 @@ $ErrorActionPreference = "Stop";
 $VerbosePreference = "Continue";
 
 # Determine base path from invokation
-$basePath = Split-Path -Parent $(Split-Path -Parent -Resolve $MyInvocation.MyCommand.Path);
+$basePath = Split-Path -Parent $(Split-Path -Parent -Resolve $MyInvocation.MyCommand.Source);
 
 # Source libraries
 . "$basePath\Scripts\LibUnattend.ps1";
@@ -44,6 +44,7 @@ $Script:PACKAGES = @{
     "xCredSSP" = "1.1.0.0"
     "xSCOM" = "1.3.3.0"
     "PackageManagementProviderResource" = "1.0.3"
+    "xWindowsUpdate" = "2.7.0.0"
 };
 
 $Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
@@ -334,8 +335,11 @@ try
                 Write-LogVerbose -Prefix $vmName -Message "VHD $($newVhdPath) already exists";
             }
             
-            $vm = New-VM -Name "$($LabPrefix)-$($vmName)" -SwitchName $HvSwitchName -Path $VmPath -VHDPath $newVhdPath -MemoryStartupBytes 1GB -Generation 2;
+            $vm = New-VM -Name "$($LabPrefix)-$($vmName)" -Path $VmPath -VHDPath $newVhdPath -MemoryStartupBytes 2GB -Generation 2;
+            Set-VM -VM $vm -CheckpointType Disabled -ProcessorCount 2;
             Set-VMMemory -VM $vm -DynamicMemoryEnabled $false;
+            Add-VMNetworkAdapter -VM $vm -SwitchName $HvSwitchName -DeviceNaming On;
+            Add-VMNetworkAdapter -VM $vm -SwitchName "Default Switch" -DeviceNaming On;
         }
         else
         {

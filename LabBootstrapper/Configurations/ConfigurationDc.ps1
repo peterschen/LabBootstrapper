@@ -25,13 +25,12 @@ configuration ConfigurationDC
 
     $features = @(
         "AD-Domain-Services",
-        "RSAT-AD-PowerShell",
-        "RSAT-ADDS-Tools",
-        "RSAT-DNS-Server",
-        "Routing",
-        "RSAT-RemoteAccess-Mgmt",
-        "RSAT-RemoteAccess-PowerShell"
-
+        "Routing"
+        #"RSAT-AD-PowerShell",
+        #"RSAT-ADDS-Tools",
+        #"RSAT-DNS-Server",
+        #"RSAT-RemoteAccess-Mgmt",
+        #"RSAT-RemoteAccess-PowerShell"
     );
     
     $ous = @(

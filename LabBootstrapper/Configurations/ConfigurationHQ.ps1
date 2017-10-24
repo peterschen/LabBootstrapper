@@ -1,4 +1,4 @@
-configuration ConfigurationOM
+configuration ConfigurationHQ
 {
     param 
     ( 
@@ -12,11 +12,12 @@ configuration ConfigurationOM
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration,
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, 
         @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
         @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
-        @{ModuleName="xCredSSP";ModuleVersion="1.1.0.0"},
-        @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"}
+        @{ModuleName="PackageManagementProviderResource";ModuleVersion="1.0.3"},
+        @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"},
+        @{ModuleName="xWindowsUpdate";ModuleVersion="2.7.0.0"}
 
     $domainPrefix = $DomainName.Split(".")[0];
 
@@ -24,12 +25,8 @@ configuration ConfigurationOM
     );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
-    $actionCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-msaa", $Credential.Password);
-    $sdkCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-sdk", $Credential.Password);
-    $drCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-datareader", $Credential.Password);
-    $dwCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-datawriter", $Credential.Password);
 
-    Node OM
+    Node HQ
     {
         foreach($feature in $features)
         {
@@ -70,7 +67,7 @@ configuration ConfigurationOM
 
         xIPAddress "IA-Ip"
         {
-            IPAddress = "$NetworkPrefix.30"
+            IPAddress = "$NetworkPrefix.253"
             SubnetMask = 24
             InterfaceAlias = "Ethernet"
             AddressFamily = "IPv4"
@@ -82,6 +79,13 @@ configuration ConfigurationOM
             InterfaceAlias = "Ethernet"
             AddressFamily = "IPv4"
             DependsOn = "[xIPAddress]IA-Ip"
+        }
+
+        xDefaultGatewayAddress "DGA-GatewayConfiguration"
+        {
+            Address = "$NetworkPrefix.10"
+            InterfaceAlias = "Ethernet"
+            AddressFamily = "IPv4"
         }
 
         xComputer "C-JoinDomain"
@@ -96,7 +100,7 @@ configuration ConfigurationOM
         {
             GroupName = "Administrators"
             Credential = $domainCredential
-            MembersToInclude = @("$DomainName\g-LocalAdmins", "$DomainName\s-om-sdk", "$DomainName\s-om-msaa")
+            MembersToInclude = "$DomainName\g-LocalAdmins"
             DependsOn = "[xComputer]C-JoinDomain"
         }
 
@@ -116,52 +120,57 @@ configuration ConfigurationOM
             DependsOn = "[xComputer]C-JoinDomain"
         }
 
-        Package "P-SqlServerClrTypes"
+        Package "P-SqlServerManagementStudio"
         {
             Ensure = "Present"
-            Name = "Microsoft System CLR Types for SQL Server 2014"
-            ProductId = ""
-            Path = "C:\LabBits\prereqs\SQLSysClrTypes.msi"
+            Name = "Microsoft SQL Server Management Studio - 16.5"
+            ProductID = ""
+            Path = "C:\LabBits\SSMS-Setup-ENU.exe"
+            Arguments = "/install /quiet"
+        }
+
+        Package "P-ReportViewer"
+        {
+            Ensure = "Present"
+            Name = "Microsoft Report Viewer 2015 Runtime"
+            ProductID = ""
+            Path = "C:\LabBits\prereqs\ReportViewer.msi"
             Arguments = "ALLUSERS=2"
         }
 
-        xCredSSP "CS-Server"
-        {
-            Ensure = "Present"
-            Role = "Server"
-        }
-
-        xCredSSP "CS-Client"
-        {
-            Ensure = "Present"
-            Role = "Client"
-            DelegateComputers = $Node.NodeName
-        }
-
-        WaitForAll "WFA-DB"
-        {
-            NodeName = "DB"
-            ResourceName = "[xSqlServerFirewall]SSF-Firewall"
-            PsDscRunAsCredential = $domainCredential
-            RetryCount = 720
-            RetryIntervalSec = 5
-        }
-
-        xSCOMManagementServerSetup "SMSS-ManagementServer"
+        xSCOMConsoleSetup "SCS-Console"
         {
             Ensure = "Present"
             SourcePath = "C:\LabBits"
             SourceFolder = "Source"
             SetupCredential = $domainCredential
-            ManagementGroupName = "$domainPrefix"
-            FirstManagementServer = $true
-            ActionAccount = $actionCredential
-            DASAccount = $sdkCredential
-            DataReader = $drCredential
-            DataWriter = $dwCredential
-            SqlServerInstance = "DB"
-            DwSqlServerInstance = "DB"
-            DependsOn = "[xComputer]C-JoinDomain", "[xCredSSP]CS-Server", "[xCredSSP]CS-Client", "[Package]P-SqlServerClrTypes", "[WaitForAll]WFA-DB"
+            DependsOn = "[xComputer]C-JoinDomain","[Package]P-ReportViewer"
+        }
+
+        xHotfix "H-RSAT"
+        {
+            Ensure = "Present"
+            Path = "C:\LabBits\WindowsTH-RSAT_WS_1709-x64.msu"
+            Id = "KB2693643"
+        }
+
+        $files = @(
+            "dnsmgmt.mmc",
+            "dnsmgr.dll",
+            "en-US\dnsmgmt.mmc",
+            "en-US\dnsmgr.dll.mui"            
+        )
+
+        foreach($file in $files)
+        {
+            File "F-dnsrsat-$file"
+            {
+                DestinationPath = "C:\Windows\System32\$file"
+                SourcePath = "C:\LabBits\DNS\$file"
+                Ensure = "Present"
+                Force = $true
+                DependsOn = "[xHotfix]H-RSAT"
+            }
         }
     }
 }

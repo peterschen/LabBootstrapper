@@ -175,15 +175,5 @@ configuration ConfigurationDB
             SQLInstanceName = "MSSQLSERVER"
             DependsOn = "[xSqlServerSetup]SSS-Default"
         }
-
-        Package "P-SqlServerManagementStudio"
-        {
-            Ensure = "Present"
-            Name = "Microsoft SQL Server Management Studio - 16.5"
-            ProductID = ""
-            Path = "C:\LabBits\SSMS-Setup-ENU.exe"
-            Arguments = "/install /quiet"
-            DependsOn = "[xSQLServerSetup]SSS-Default"
-        }
     }
 }
