@@ -154,10 +154,12 @@ configuration ConfigurationHQ
             Id = "KB2693643"
         }
 
+        # Workaround for the broken RSAT package which is missing the DNS configuration
+
         $files = @(
-            "dnsmgmt.mmc",
+            "dnsmgmt.msc",
             "dnsmgr.dll",
-            "en-US\dnsmgmt.mmc",
+            "en-US\dnsmgmt.msc",
             "en-US\dnsmgr.dll.mui"            
         )
 
@@ -171,6 +173,47 @@ configuration ConfigurationHQ
                 Force = $true
                 DependsOn = "[xHotfix]H-RSAT"
             }
+        }
+
+        File "F-dnsrsat-DNS.lnk"
+        {
+            DestinationPath = "C:\Users\All Users\Microsoft\Windows\Start Menu\Programs\Administrative Tools\DNS.lnk"
+            SourcePath = "C:\LabBits\DNS\DNS.lnk"
+            Ensure = "Present"
+            Force = $true
+            DependsOn = "[xHotfix]H-RSAT"
+        }
+
+        Script "S-dnsrsat"
+        {
+            GetScript = { 
+                $installDate = Get-Content (Join-Path -Path $env:SYSTEMDRIVE -ChildPath 'dnsrsat.txt')
+                return @{ 'InstallDate' = "$installDate" }
+            }
+            TestScript = { 
+                $state = $GetScript;
+                
+                if($state['InstallDate'] -eq "")
+                {
+                    Write-Verbose -Message "DNS snap-in not registered yet";
+                    return $true;
+                }
+
+                Write-Verbose -Message ("DNS snap-in was registered on: {0}" -f $state["InstalldDate"]);
+                return $false;
+            }
+            SetScript = {
+                try
+                {
+                    $result = Start-Process -FilePath 'regsvr32.exe' -Args "/s c:\windows\system32\dnsmgr.dll" -Wait -NoNewWindow;
+                    Set-Content -Path (Join-Path -Path $env:SYSTEMDRIVE -ChildPath 'dnsrsat.txt') -Value (Get-Date);
+                }
+                catch
+                {
+                    Write-Error -Message ("Could not register DNS snap-in: {0}" -f $_.Exception.Message);
+                }
+            }
+            DependsOn = "[File]F-dnsrsat-dnsmgr.dll"
         }
     }
 }
