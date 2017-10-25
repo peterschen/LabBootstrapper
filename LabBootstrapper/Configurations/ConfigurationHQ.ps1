@@ -215,5 +215,14 @@ configuration ConfigurationHQ
             }
             DependsOn = "[File]F-dnsrsat-dnsmgr.dll"
         }
+
+        Package "P-DockerForWindows"
+        {
+            Ensure = "Present"
+            Name = "Docker for Windows"
+            ProductID = ""
+            Path = "C:\LabBits\Docker for Windows Installer.exe"
+            Arguments = ""
+        }
     }
 }
