@@ -224,5 +224,12 @@ configuration ConfigurationHQ
             Path = "C:\LabBits\Docker for Windows Installer.exe"
             Arguments = ""
         }
+
+        Environment "E-DockerHost"
+        {
+            Name = "DOCKER_HOST"
+            Value = "app1"
+            Ensure = "Present"
+        }
     }
 }
