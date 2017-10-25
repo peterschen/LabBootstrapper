@@ -17,11 +17,13 @@ configuration ConfigurationHQ
         @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
         @{ModuleName="PackageManagementProviderResource";ModuleVersion="1.0.3"},
         @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"},
-        @{ModuleName="xWindowsUpdate";ModuleVersion="2.7.0.0"}
+        @{ModuleName="xWindowsUpdate";ModuleVersion="2.7.0.0"},
+        @{ModuleName="xDismFeature";ModuleVersion="1.2.0.0"}        
 
     $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
+        "Microsoft-Hyper-V-Tools-All"
     );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
@@ -30,7 +32,7 @@ configuration ConfigurationHQ
     {
         foreach($feature in $features)
         {
-            WindowsFeature "WF-$feature" 
+            xDismFeature "xDF-$feature" 
             { 
                 Name = $feature
                 Ensure = "Present"
