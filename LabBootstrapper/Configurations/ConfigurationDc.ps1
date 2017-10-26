@@ -19,7 +19,7 @@ configuration ConfigurationDC
         @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
         @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
         @{ModuleName="xActiveDirectory";ModuleVersion="2.13.0.0"}
-        @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="3.13.0.0"}
+        @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
 
     $domainPrefix = $DomainName.Split(".")[0];
 

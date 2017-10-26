@@ -15,12 +15,16 @@ configuration ConfigurationAPP1
     Import-DscResource -ModuleName PSDesiredStateConfiguration, 
         @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
         @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
-        @{ModuleName="PackageManagementProviderResource";ModuleVersion="1.0.3"}
+        @{ModuleName="PackageManagement";ModuleVersion="1.1.6.0"},
+        @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
+    
+    Import-DscResource -Name "PSModule" -ModuleName "PackageManagementProviderResource" -ModuleVersion "1.0.3";
 
     $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
-        "Containers"
+        "Containers",
+        "Hyper-V"
     );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
@@ -69,6 +73,18 @@ configuration ConfigurationAPP1
             Protocol = "tcp"
         }
 
+        xFirewall "F-Docker-lcow"
+        {
+            Name = "Docker LCOW"
+            DisplayName = "Docker LCOW (tcp/12375)"
+            Ensure = "Present"
+            Enabled = "True"
+            Profile = ("Domain", "Private", "Public")
+            Direction = "Inbound"
+            LocalPort = 12375
+            Protocol = "tcp"
+        }
+
         xFirewall "F-DockerSwarmMaster"
         {
             Name = "DockerSwarmMaster"
@@ -79,6 +95,22 @@ configuration ConfigurationAPP1
             Direction = "Inbound"
             LocalPort = 3375
             Protocol = "tcp"
+        }
+
+        for($i = 0; $i -lt 101; $i++)
+        {
+            $port = 50000 + $i;
+            xFirewall "F-Container-$port"
+            {
+                Name = "Container-$port"
+                DisplayName = "Container (tcp/$port)"
+                Ensure = "Present"
+                Enabled = "True"
+                Profile = ("Domain", "Private", "Public")
+                Direction = "Inbound"
+                LocalPort = $port
+                Protocol = "tcp"
+            }
         }
 
         xIPAddress "IA-Ip"
@@ -160,7 +192,7 @@ configuration ConfigurationAPP1
             ValueData = "C:\Program Files\Docker\dockerd.exe --run-service -H tcp://0.0.0.0:2375 -H npipe://"
             DependsOn = "[PackageManagement]PM-Docker"
         }
-        
+
         Script "S-RebootDocker"
         {
             GetScript = { @{ Result = "" } }
@@ -174,68 +206,58 @@ configuration ConfigurationAPP1
             DependsOn = "[Registry]R-DockerServiceConfiguration"
         }
 
-        File "F-SwarmToken"
+        File "F-LinuxContainers"
         {
+            DestinationPath = "$env:ProgramFiles\Linux Containers"
             Ensure = "Present"
-            DestinationPath = "C:\LabBits\swarm-token.txt"
-            Contents = "3908e2225b30437f9a87d6e356297272"
+            Type = "Directory"
         }
 
-        Script "S-RunSwarmAgent"
+        File "F-docker-kernel"
         {
-            GetScript = { @{ Result = "" } }
-            SetScript = {
-                $ErrorActionPreference = "SilentlyContinue";
-                $token = Get-Content C:\LabBits\swarm-token.txt;
-
-                $ip = (Get-NetIPAddress -AddressFamily IPv4 `
-                    | Where-Object -FilterScript { $_.InterfaceAlias -eq "vEthernet (HNS Internal NIC)" }
-                ).IPAddress;
-
-                docker pull stefanscherer/swarm-windows:latest-nano
-                docker run -d --name=swarm-agent --restart=always stefanscherer/swarm-windows:latest-nano join "--addr=$($ip):2375" "token://$($token)";
-            }
-            TestScript = {
-                $agentContainer = docker ps -aq --filter "name=swarm-agent";
-                return -not [string]::IsNullOrEmpty($agentContainer);
-            }
-            Credential = $domainCredential
-            DependsOn = "[Script]S-RebootDocker", "[File]F-SwarmToken"
+            DestinationPath = "$env:ProgramFiles\Linux Containers\bootx64.efi"
+            SourcePath = "C:\LabBits\lcow-kernel"
+            Ensure = "Present"
+            DependsOn = "[File]F-LinuxContainers"
         }
 
-        Script "S-RunSwarmMaster"
+        File "F-docker-initrd"
         {
-            GetScript = { @{ Result = "" } }
-            SetScript = {
-                $ErrorActionPreference = "SilentlyContinue";
-                $token = Get-Content C:\LabBits\swarm-token.txt;
-
-                docker pull stefanscherer/swarm-windows:latest-nano
-                docker run -d --name=swarm-master --restart=always -p 3375:2375 stefanscherer/swarm-windows:latest-nano manage "token://$($token)";
-            }
-            TestScript = {
-                $agentContainer = docker ps -aq --filter "name=swarm-master";
-                return -not [string]::IsNullOrEmpty($agentContainer);
-            }
-            Credential = $domainCredential
-            DependsOn = "[Script]S-RebootDocker", "[File]F-SwarmToken"
+            DestinationPath = "$env:ProgramFiles\Linux Containers\initrd.img"
+            SourcePath = "C:\LabBits\lcow-initrd.img"
+            Ensure = "Present"
+            DependsOn = "[File]F-LinuxContainers"
         }
 
-        Script "S-RunPortainer"
+        File "F-docker-dockerd.exe"
         {
-            GetScript = { @{ Result = "" } }
-            SetScript = {
-                $ErrorActionPreference = "SilentlyContinue";
-                $ip = $(docker inspect --format '{{ json .NetworkSettings.Networks.nat.IPAddress }}' swarm-master);
-                docker pull portainer/portainer:windows
-                docker run -d --name=portainer --restart=always -p 80:9000 portainer/portainer:windows -H tcp://$($ip):2375 --swarm
-            }
-            TestScript = {
-                $agentContainer = docker ps -aq --filter "name=portainer";
-                return -not [string]::IsNullOrEmpty($agentContainer);
-            }
-            Credential = $domainCredential
-            DependsOn = "[Script]S-RunSwarmMaster"
+            DestinationPath = "$env:ProgramFiles\Linux Containers\dockerd.exe"
+            SourcePath = "C:\LabBits\dockerd.exe"
+            Ensure = "Present"
+            DependsOn = "[File]F-LinuxContainers"
+        }
+
+        Environment "E-LCOW_SUPPORTED"
+        {
+            Name = "LCOW_SUPPORTED"
+            Value = "1"
+            Ensure = "Present"
+        }
+
+        Environment "E-LCOW_API_PLATFORM_IF_OMITTED"
+        {
+            Name = "LCOW_API_PLATFORM_IF_OMITTED"
+            Value = "linux"
+            Ensure = "Present"
+        }
+
+        xService "xS-docker-lcow"
+        {
+            Name = "docker-lcow"
+            Ensure = "Present"
+            StartupType = "Automatic"
+            Path = "$env:ProgramFiles\Linux Containers\dockerd.exe --run-service --experimental -H tcp://0.0.0.0:12375 -H npipe:////./pipe/lcow --data-root C:\lcow"
+            DependsOn = "[File]F-docker-dockerd.exe","[Environment]E-LCOW_SUPPORTED","[Environment]E-LCOW_API_PLATFORM_IF_OMITTED"
         }
     }
 }

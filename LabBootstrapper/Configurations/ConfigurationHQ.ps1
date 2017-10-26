@@ -218,13 +218,11 @@ configuration ConfigurationHQ
             DependsOn = "[File]F-dnsrsat-dnsmgr.dll"
         }
 
-        Package "P-DockerForWindows"
+        Environment "E-Path"
         {
+            Name = "Path"
+            Value = "$env:Path;C:\LabBits\tools"
             Ensure = "Present"
-            Name = "Docker for Windows"
-            ProductID = ""
-            Path = "C:\LabBits\Docker for Windows Installer.exe"
-            Arguments = ""
         }
 
         Environment "E-DockerHost"

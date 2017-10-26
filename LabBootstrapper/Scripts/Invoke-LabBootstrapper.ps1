@@ -39,12 +39,14 @@ $Script:PACKAGES = @{
     "xActiveDirectory" = "2.13.0.0"
     "xComputerManagement" = "1.8.0.0"
     "xNetworking" = "2.11.0.0"
-    "xPSDesiredStateConfiguration" = "3.13.0.0"
+    "xPSDesiredStateConfiguration" = "7.0.0.0"
     "xSQLServer" = "2.0.0.0"
     "xCredSSP" = "1.1.0.0"
     "xSCOM" = "1.3.3.0"
+    "PackageManagement" = "1.1.6.0"
     "PackageManagementProviderResource" = "1.0.3"
     "xWindowsUpdate" = "2.7.0.0"
+    "xDismFeature" = "1.2.0.0"
 };
 
 $Script:PLACEHOLDER_COMPUTERNAME = "PLACEHOLDER_COMPUTERNAME";
@@ -335,11 +337,9 @@ try
                 Write-LogVerbose -Prefix $vmName -Message "VHD $($newVhdPath) already exists";
             }
             
-            $vm = New-VM -Name "$($LabPrefix)-$($vmName)" -Path $VmPath -VHDPath $newVhdPath -MemoryStartupBytes 2GB -Generation 2;
+            $vm = New-VM -Name "$($LabPrefix)-$($vmName)" -Path $VmPath -VHDPath $newVhdPath -SwitchName $HvSwitchName -MemoryStartupBytes 2GB -Generation 2;
             Set-VM -VM $vm -CheckpointType Disabled -ProcessorCount 2;
             Set-VMMemory -VM $vm -DynamicMemoryEnabled $false;
-            Add-VMNetworkAdapter -VM $vm -SwitchName $HvSwitchName -DeviceNaming On;
-            Add-VMNetworkAdapter -VM $vm -SwitchName "Default Switch" -DeviceNaming On;
         }
         else
         {
@@ -354,6 +354,13 @@ try
                 Write-LogVerbose -Prefix $vmName -Message "Shutting down running VM";
                 Stop-VM -VM $vm;
             }
+
+            # Make sure virtualization features are exposed
+            Set-VMProcessor -VM $vm -ExposeVirtualizationExtensions $true;
+
+            # Make sure MacAddressSpoofing is enabled
+            $nic = Get-VMNetworkAdapter -VM $vm | Select-Object -First 1;
+            Set-VMNetworkAdapter -VMNetworkAdapter $nic -MacAddressSpoofing On;
 
             try
             {
