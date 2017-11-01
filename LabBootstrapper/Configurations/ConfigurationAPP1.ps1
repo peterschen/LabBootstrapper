@@ -13,14 +13,10 @@ configuration ConfigurationAPP1
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration, 
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
-        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
         @{ModuleName="PackageManagement";ModuleVersion="1.1.6.0"},
         @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
     
     Import-DscResource -Name "PSModule" -ModuleName "PackageManagementProviderResource" -ModuleVersion "1.0.3";
-
-    $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
         "Containers",
@@ -40,25 +36,8 @@ configuration ConfigurationAPP1
             }
         }
 
-        xFirewall "F-FPS-NB_Datagram-In-UDP"
+        cpFirewall "Firewall"
         {
-            Name = "FPS-NB_Datagram-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-NB_Name-In-UDP"
-        {
-            Name = "FPS-NB_Name-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-NB_Session-In-TCP"
-        {
-            Name = "FPS-NB_Session-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
         }
 
         xFirewall "F-Docker"
@@ -113,59 +92,18 @@ configuration ConfigurationAPP1
             }
         }
 
-        xIPAddress "IA-Ip"
+        cpNetworking "Networking"
         {
-            IPAddress = "$NetworkPrefix.70"
-            SubnetMask = 24
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
+            IpAddress = "$NetworkPrefix.70"
+            DnsServer = "$NetworkPrefix.10"
         }
 
-        xDnsServerAddress "DSA-DnsConfiguration"
-        { 
-            Address = "$NetworkPrefix.10"
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-            DependsOn = "[xIPAddress]IA-Ip"
-        }
-
-        xDefaultGatewayAddress "DGA-GatewayConfiguration"
+        cpDomainOnboarding "DomainOnboarding"
         {
-            Address = "$NetworkPrefix.10"
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-        }
-
-        xComputer "C-JoinDomain"
-        {
-            Name = $Node.NodeName
+            NodeName = $Node.NodeName
             DomainName = $DomainName
-            Credential = $domainCredential
-            DependsOn = "[xDnsServerAddress]DSA-DnsConfiguration"
-        }
-
-        Group "G-Administrators"
-        {
-            GroupName = "Administrators"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-LocalAdmins"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteDesktopUsers"
-        {
-            GroupName = "Remote Desktop Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteDesktopUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteManagementUsers"
-        {
-            GroupName = "Remote Management Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteManagementUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
+            Credential = $Credential.Password
+            DependsOn = "[cpNetworking]Networking"
         }
 
         PSModule "PM-DockerProvider"

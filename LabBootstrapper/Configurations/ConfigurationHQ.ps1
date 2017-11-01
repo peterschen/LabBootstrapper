@@ -13,14 +13,10 @@ configuration ConfigurationHQ
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration, 
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
-        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
         @{ModuleName="PackageManagementProviderResource";ModuleVersion="1.0.3"},
         @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"},
         @{ModuleName="xWindowsUpdate";ModuleVersion="2.7.0.0"},
         @{ModuleName="xDismFeature";ModuleVersion="1.2.0.0"}        
-
-    $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
         "Microsoft-Hyper-V-Tools-All"
@@ -39,87 +35,22 @@ configuration ConfigurationHQ
             }
         }
 
-        xFirewall "F-FPS-NB_Datagram-In-UDP"
+        cpFirewall "Firewall"
         {
-            Name = "FPS-NB_Datagram-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
         }
 
-        xFirewall "F-FPS-NB_Name-In-UDP"
+        cpNetworking "Networking"
         {
-            Name = "FPS-NB_Name-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
+            IpAddress = "$NetworkPrefix.253"
+            DnsServer = "$NetworkPrefix.10"
         }
 
-        xFirewall "F-FPS-NB_Session-In-TCP"
+        cpDomainOnboarding "DomainOnboarding"
         {
-            Name = "FPS-NB_Session-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-SMB-In-TCP"
-        {
-            Name = "FPS-SMB-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xIPAddress "IA-Ip"
-        {
-            IPAddress = "$NetworkPrefix.253"
-            SubnetMask = 24
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-        }
-
-        xDnsServerAddress "DSA-DnsConfiguration"
-        { 
-            Address = "$NetworkPrefix.10"
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-            DependsOn = "[xIPAddress]IA-Ip"
-        }
-
-        xDefaultGatewayAddress "DGA-GatewayConfiguration"
-        {
-            Address = "$NetworkPrefix.10"
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-        }
-
-        xComputer "C-JoinDomain"
-        {
-            Name = $Node.NodeName
+            NodeName = $Node.NodeName
             DomainName = $DomainName
-            Credential = $domainCredential
-            DependsOn = "[xDnsServerAddress]DSA-DnsConfiguration"
-        }
-
-        Group "G-Administrators"
-        {
-            GroupName = "Administrators"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-LocalAdmins"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteDesktopUsers"
-        {
-            GroupName = "Remote Desktop Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteDesktopUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteManagementUsers"
-        {
-            GroupName = "Remote Management Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteManagementUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
+            Credential = $Credential.Password
+            DependsOn = "[cpNetworking]Networking"
         }
 
         Package "P-SqlServerManagementStudio"

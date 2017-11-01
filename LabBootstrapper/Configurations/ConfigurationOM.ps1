@@ -12,16 +12,11 @@ configuration ConfigurationOM
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
-        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
         @{ModuleName="xCredSSP";ModuleVersion="1.1.0.0"},
-        @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"}
+        @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"};
 
     $domainPrefix = $DomainName.Split(".")[0];
-
-    $features = @(
-    );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
     $actionCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-msaa", $Credential.Password);
@@ -31,91 +26,25 @@ configuration ConfigurationOM
 
     Node OM
     {
-        foreach($feature in $features)
+        cpFirewall "Firewall"
         {
-            WindowsFeature "WF-$feature" 
-            { 
-                Name = $feature
-                Ensure = "Present"
-            }
         }
 
-        xFirewall "F-FPS-NB_Datagram-In-UDP"
+        cpNetworking "Networking"
         {
-            Name = "FPS-NB_Datagram-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
+            IpAddress = "$NetworkPrefix.30"
+            DnsServer = "$NetworkPrefix.10"
         }
 
-        xFirewall "F-FPS-NB_Name-In-UDP"
+        cpDomainOnboarding "DomainOnboarding"
         {
-            Name = "FPS-NB_Name-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-NB_Session-In-TCP"
-        {
-            Name = "FPS-NB_Session-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-SMB-In-TCP"
-        {
-            Name = "FPS-SMB-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xIPAddress "IA-Ip"
-        {
-            IPAddress = "$NetworkPrefix.30"
-            SubnetMask = 24
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-        }
-
-        xDnsServerAddress "DSA-DnsConfiguration"
-        { 
-            Address = "$NetworkPrefix.10"
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-            DependsOn = "[xIPAddress]IA-Ip"
-        }
-
-        xComputer "C-JoinDomain"
-        {
-            Name = $Node.NodeName
+            NodeName = $Node.NodeName
             DomainName = $DomainName
-            Credential = $domainCredential
-            DependsOn = "[xDnsServerAddress]DSA-DnsConfiguration"
+            ExtraAdmins = @("$DomainName\s-om-sdk", "$DomainName\s-om-msaa")
+            Credential = $Credential.Password
+            DependsOn = "[cpNetworking]Networking"
         }
-
-        Group "G-Administrators"
-        {
-            GroupName = "Administrators"
-            Credential = $domainCredential
-            MembersToInclude = @("$DomainName\g-LocalAdmins", "$DomainName\s-om-sdk", "$DomainName\s-om-msaa")
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteDesktopUsers"
-        {
-            GroupName = "Remote Desktop Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteDesktopUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteManagementUsers"
-        {
-            GroupName = "Remote Management Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteManagementUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
+        
         Package "P-SqlServerClrTypes"
         {
             Ensure = "Present"
@@ -161,7 +90,7 @@ configuration ConfigurationOM
             DataWriter = $dwCredential
             SqlServerInstance = "DB"
             DwSqlServerInstance = "DB"
-            DependsOn = "[xComputer]C-JoinDomain", "[xCredSSP]CS-Server", "[xCredSSP]CS-Client", "[Package]P-SqlServerClrTypes", "[WaitForAll]WFA-DB"
+            DependsOn = "[cpDomainOnboarding]DomainOnboarding", "[xCredSSP]CS-Server", "[xCredSSP]CS-Client", "[Package]P-SqlServerClrTypes", "[WaitForAll]WFA-DB"
         }
     }
 }

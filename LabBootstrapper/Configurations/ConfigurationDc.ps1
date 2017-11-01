@@ -16,8 +16,6 @@ configuration ConfigurationDC
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
-        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
         @{ModuleName="xActiveDirectory";ModuleVersion="2.13.0.0"}
         @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
 
@@ -26,11 +24,6 @@ configuration ConfigurationDC
     $features = @(
         "AD-Domain-Services",
         "Routing"
-        #"RSAT-AD-PowerShell",
-        #"RSAT-ADDS-Tools",
-        #"RSAT-DNS-Server",
-        #"RSAT-RemoteAccess-Mgmt",
-        #"RSAT-RemoteAccess-PowerShell"
     );
     
     $ous = @(
@@ -83,48 +76,15 @@ configuration ConfigurationDC
             }
         }
 
-        xFirewall "F-FPS-NB_Datagram-In-UDP"
+        cpFirewall "Firewall"
         {
-            Name = "FPS-NB_Datagram-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
         }
 
-        xFirewall "F-FPS-NB_Name-In-UDP"
+        cpNetworking "Networking"
         {
-            Name = "FPS-NB_Name-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-NB_Session-In-TCP"
-        {
-            Name = "FPS-NB_Session-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-SMB-In-TCP"
-        {
-            Name = "FPS-SMB-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xIPAddress "IA-Ip"
-        {
-            IPAddress = "$NetworkPrefix.10"
-            SubnetMask = 24
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-        }
-
-        xDnsServerAddress "DSA-DnsConfiguration"
-        { 
-            Address = "127.0.0.1"
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-            DependsOn = "[xIPAddress]IA-Ip", "[WindowsFeature]WF-AD-Domain-Services"
+            IpAddress = "$NetworkPrefix.10"
+            DnsServer = "127.0.0.1"
+            DependsOn = "[WindowsFeature]WF-AD-Domain-Services"
         }
 
         xADDomain "AD-FirstDC"
@@ -132,7 +92,7 @@ configuration ConfigurationDC
             DomainName = $DomainName
             DomainAdministratorCredential = $domainCredential
             SafemodeAdministratorPassword = $domainCredential
-		    DependsOn = "[WindowsFeature]WF-AD-Domain-Services", "[xDnsServerAddress]DSA-DnsConfiguration"
+		    DependsOn = "[cpNetworking]Networking"
         }
 
         xWaitForADDomain "WFAD-FirstDC"

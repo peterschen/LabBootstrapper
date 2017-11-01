@@ -13,11 +13,7 @@ configuration ConfigurationDB
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
-        @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"},
         @{ModuleName="xSQLServer";ModuleVersion="2.0.0.0"}
-
-    $domainPrefix = $DomainName.Split(".")[0];
 
     $features = @(
         "NET-Framework-Core"
@@ -38,101 +34,26 @@ configuration ConfigurationDB
             }
         }
 
-        xFirewall "F-RemoteSvcAdmin-In-TCP"
+        cpFirewall "Firewall"
         {
-            Name = "RemoteSvcAdmin-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
+            ExtraRules = @(
+                "WMI-RPCSS-In-TCP",
+                "WMI-WINMGMT-In-TCP"
+            )
         }
 
-        xFirewall "F-FPS-NB_Datagram-In-UDP"
+        cpNetworking "Networking"
         {
-            Name = "FPS-NB_Datagram-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
+            IpAddress = "$NetworkPrefix.20"
+            DnsServer = "$NetworkPrefix.10"
         }
 
-        xFirewall "F-FPS-NB_Name-In-UDP"
+        cpDomainOnboarding "DomainOnboarding"
         {
-            Name = "FPS-NB_Name-In-UDP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-NB_Session-In-TCP"
-        {
-            Name = "FPS-NB_Session-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-FPS-SMB-In-TCP"
-        {
-            Name = "FPS-SMB-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-WMI-RPCSS-In-TCP"
-        {
-            Name = "WMI-RPCSS-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-
-        xFirewall "F-WMI-WINMGMT-In-TCP"
-        {
-            Name = "WMI-WINMGMT-In-TCP"
-            Ensure = "Present"
-            Enabled = "True"
-        }
-        
-        xIPAddress "IA-Ip"
-        {
-            IPAddress = "$NetworkPrefix.20"
-            SubnetMask = 24
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-        }
-
-        xDnsServerAddress "DSA-DnsConfiguration"
-        { 
-            Address = "$NetworkPrefix.10"
-            InterfaceAlias = "Ethernet"
-            AddressFamily = "IPv4"
-            DependsOn = "[xIPAddress]IA-Ip"
-        }
-
-        xComputer "C-JoinDomain"
-        {
-            Name = $Node.NodeName
+            NodeName = $Node.NodeName
             DomainName = $DomainName
-            Credential = $domainCredential
-            DependsOn = "[xDnsServerAddress]DSA-DnsConfiguration"
-        }
-
-        Group "G-Administrators"
-        {
-            GroupName = "Administrators"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-LocalAdmins"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteDesktopUsers"
-        {
-            GroupName = "Remote Desktop Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteDesktopUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
-        }
-
-        Group "G-RemoteManagementUsers"
-        {
-            GroupName = "Remote Management Users"
-            Credential = $domainCredential
-            MembersToInclude = "$DomainName\g-RemoteManagementUsers"
-            DependsOn = "[xComputer]C-JoinDomain"
+            Credential = $Credential.Password
+            DependsOn = "[cpNetworking]Networking"
         }
 
         xSQLServerSetup "SSS-Default"
@@ -144,7 +65,7 @@ configuration ConfigurationDB
             SQLSysAdminAccounts = "$DomainName\g-SqlAdmins"
             SQLSvcAccount = $engineCredential
             AgtSvcAccount = $agentCredential
-            DependsOn = "[WindowsFeature]WF-NET-Framework-Core","[xComputer]C-JoinDomain"
+            DependsOn = "[WindowsFeature]WF-NET-Framework-Core","[cpDomainOnboarding]DomainOnboarding"
         }
 
         xSqlServerFirewall "SSF-Firewall"
