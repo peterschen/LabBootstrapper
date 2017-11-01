@@ -12,7 +12,7 @@ configuration ConfigurationAPP1
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, 
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
         @{ModuleName="PackageManagement";ModuleVersion="1.1.6.0"},
         @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
     

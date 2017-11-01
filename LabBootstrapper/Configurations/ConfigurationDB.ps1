@@ -12,7 +12,7 @@ configuration ConfigurationDB
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration,
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
         @{ModuleName="xSQLServer";ModuleVersion="2.0.0.0"}
 
     $features = @(

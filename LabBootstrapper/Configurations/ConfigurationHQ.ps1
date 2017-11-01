@@ -12,7 +12,7 @@ configuration ConfigurationHQ
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, 
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
         @{ModuleName="PackageManagementProviderResource";ModuleVersion="1.0.3"},
         @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"},
         @{ModuleName="xWindowsUpdate";ModuleVersion="2.7.0.0"},
@@ -77,7 +77,7 @@ configuration ConfigurationHQ
             SourcePath = "C:\LabBits"
             SourceFolder = "Source"
             SetupCredential = $domainCredential
-            DependsOn = "[xComputer]C-JoinDomain","[Package]P-ReportViewer"
+            DependsOn = "[cpDomainOnboarding]DomainOnboarding","[Package]P-ReportViewer"
         }
 
         xHotfix "H-RSAT"

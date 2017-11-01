@@ -15,7 +15,7 @@ configuration ConfigurationDC
         [int] $RetryInterval = 30
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration,
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
         @{ModuleName="xActiveDirectory";ModuleVersion="2.13.0.0"}
         @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
 

@@ -5,7 +5,7 @@
         "DC",
         "DB",
         "OM",
-        "OR"
+        "APP1"
     ),
     [string] $VmPath,
     [string] $VhdPath,
@@ -33,6 +33,7 @@ $basePath = Split-Path -Parent $(Split-Path -Parent -Resolve $MyInvocation.MyCom
 
 $Script:PATH_CONFIGURATIONS = "$basePath\Configurations"
 $Script:PATH_ASSETS = "$basePath\Assets";
+$Script:PATH_MODULES = "$basePath\Modules";
 $Script:PATH_DSCMODULES = "$($Script:PATH_ASSETS)\DscModules";
 
 $Script:PACKAGES = @{
@@ -112,6 +113,21 @@ function Get-DscModules
 
     process
     {
+        $psModulePath = "$($env:ProgramFiles)\WindowsPowerShell\Modules"
+
+        if(Test-Path -Path "$psModulePath\cpBase")
+        {
+            Remove-Item -Force -Recurse -Path "$psModulePath\cpBase";
+        }
+
+        if(Test-Path -Path "$($Script:PATH_DSCMODULES)\cpBase")
+        {
+            Remove-Item -Force -Recurse -Path "$($Script:PATH_DSCMODULES)\cpBase";
+        }
+
+        Copy-Item -Recurse -Path "$($Script:PATH_MODULES)\cpBase" -Destination $psModulePath;
+        Copy-Item -Recurse -Path "$($Script:PATH_MODULES)\cpBase" -Destination $Script:PATH_DSCMODULES;
+
         foreach($package in $Script:PACKAGES.Keys)
         {
             $version = $Script:PACKAGES[$package];
