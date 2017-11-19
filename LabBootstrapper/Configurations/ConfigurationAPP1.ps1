@@ -20,7 +20,8 @@ configuration ConfigurationAPP1
 
     $features = @(
         "Containers",
-        "Hyper-V"
+        "Hyper-V",
+        "Hyper-V-PowerShell"
     );
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
