@@ -55,7 +55,7 @@ configuration ConfigurationFILE
         Package "P-StorageSyncAgent"
         {
             Ensure = "Present"
-            Name = ""
+            Name = "Storage Sync Agent"
             ProductId = ""
             Path = "C:\LabBits\StorageSyncAgent_WS2016.msi"
             Arguments = ""
