@@ -87,6 +87,15 @@ configuration ConfigurationHQ
             Id = "KB2693643"
         }
 
+        Package "P-ProjectHonolulu"
+        {
+            Ensure = "Present"
+            Name = ""
+            ProductId = "228125BF-AA32-49AE-8939-0A76A75A573B"
+            Path = "C:\LabBits\HonoluluTechnicalPreview1709-20016.msi"
+            Arguments = ""
+        }
+
         # Workaround for the broken RSAT package which is missing the DNS configuration
 
         $files = @(
