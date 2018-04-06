@@ -2,7 +2,7 @@ Configuration cpNetworking
 {
     param
     (
-        [string] $IpAddress,
+        [string[]] $IpAddress,
         [string] $DnsServer
     );
 
@@ -12,7 +12,6 @@ Configuration cpNetworking
     xIPAddress "IP"
     {
         IPAddress = $IpAddress
-        SubnetMask = 24
         InterfaceAlias = "Ethernet"
         AddressFamily = "IPv4"
     }
