@@ -79,8 +79,8 @@ configuration ConfigurationOM
         xSCOMManagementServerSetup "SMSS-ManagementServer"
         {
             Ensure = "Present"
-            SourcePath = "C:\LabBits"
-            SourceFolder = "Source"
+            SourcePath = "C:\LabBits\Source"
+            SourceFolder = "1801"
             SetupCredential = $domainCredential
             ManagementGroupName = "$domainPrefix"
             FirstManagementServer = $true
