@@ -74,8 +74,8 @@ configuration ConfigurationHQ
         xSCOMConsoleSetup "SCS-Console"
         {
             Ensure = "Present"
-            SourcePath = "C:\LabBits"
-            SourceFolder = "Source"
+            SourcePath = "C:\LabBits\Source"
+            SourceFolder = "1801"
             SetupCredential = $domainCredential
             DependsOn = "[cpDomainOnboarding]DomainOnboarding","[Package]P-ReportViewer"
         }

@@ -9,7 +9,6 @@ Configuration cpDomainOnboarding
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"},
         @{ModuleName="xComputerManagement";ModuleVersion="1.8.0.0"};
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential);

@@ -6,7 +6,7 @@ Configuration cpFirewall
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"};
+        @{ModuleName="xNetworking";ModuleVersion="5.5.0.0"};
 
     $rules = $ExtraRules + @(
         "FPS-NB_Datagram-In-UDP",

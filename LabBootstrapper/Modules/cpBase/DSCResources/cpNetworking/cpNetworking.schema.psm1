@@ -2,16 +2,16 @@ Configuration cpNetworking
 {
     param
     (
-        [string[]] $IpAddress,
+        [string] $IpAddress,
         [string] $DnsServer
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="2.11.0.0"};
+        @{ModuleName="xNetworking";ModuleVersion="5.5.0.0"};
 
     xIPAddress "IP"
     {
-        IPAddress = $IpAddress
+        IPAddress = @($IpAddress)
         InterfaceAlias = "Ethernet"
         AddressFamily = "IPv4"
     }
