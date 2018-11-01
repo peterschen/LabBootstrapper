@@ -21,6 +21,10 @@ configuration ConfigurationDPM
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
     $credential = New-Object System.Management.Automation.PSCredential ("$domainName\s-dpm", $Credential.Password);
 
+    $features = @(
+        "Hyper-V-PowerShell"
+    );
+
     Node DPM
     {
         cpFirewall "Firewall"
@@ -39,6 +43,15 @@ configuration ConfigurationDPM
             DomainName = $DomainName
             Credential = $Credential.Password
             DependsOn = "[cpNetworking]Networking"
+        }
+
+        foreach($feature in $features)
+        {
+            WindowsFeature "WF-$feature" 
+            { 
+                Name = $feature
+                Ensure = "Present"
+            }
         }
 
         xCredSSP "CS-Server"
