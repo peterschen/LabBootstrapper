@@ -40,7 +40,7 @@ configuration ConfigurationFILE
 
         cpNetworking "Networking"
         {
-            IpAddress = "$NetworkPrefix.80"
+            IpAddress = "$NetworkPrefix.80/24"
             DnsServer = "$NetworkPrefix.10"
         }
 

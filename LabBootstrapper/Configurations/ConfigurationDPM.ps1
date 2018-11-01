@@ -1,4 +1,4 @@
-configuration ConfigurationOM
+configuration ConfigurationDPM
 {
     param 
     ( 
@@ -14,17 +14,14 @@ configuration ConfigurationOM
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
         @{ModuleName="xCredSSP";ModuleVersion="1.1.0.0"},
-        @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"};
+        @{ModuleName="xSCDPM";ModuleVersion="1.2.0.0"};
 
     $domainPrefix = $DomainName.Split(".")[0];
 
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
-    $actionCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-msaa", $Credential.Password);
-    $sdkCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-sdk", $Credential.Password);
-    $drCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-datareader", $Credential.Password);
-    $dwCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-om-datawriter", $Credential.Password);
+    $credential = New-Object System.Management.Automation.PSCredential ("$domainName\s-dpm", $Credential.Password);
 
-    Node OM
+    Node DPM
     {
         cpFirewall "Firewall"
         {
@@ -32,7 +29,7 @@ configuration ConfigurationOM
 
         cpNetworking "Networking"
         {
-            IpAddress = "$NetworkPrefix.30/24"
+            IpAddress = "$NetworkPrefix.50/24"
             DnsServer = "$NetworkPrefix.10"
         }
 
@@ -40,18 +37,8 @@ configuration ConfigurationOM
         {
             NodeName = $Node.NodeName
             DomainName = $DomainName
-            ExtraAdmins = @("$DomainName\s-om-sdk", "$DomainName\s-om-msaa")
             Credential = $Credential.Password
             DependsOn = "[cpNetworking]Networking"
-        }
-        
-        Package "P-SqlServerClrTypes"
-        {
-            Ensure = "Present"
-            Name = "Microsoft System CLR Types for SQL Server 2014"
-            ProductId = ""
-            Path = "C:\LabBits\prereqs\SQLSysClrTypes.msi"
-            Arguments = "ALLUSERS=2"
         }
 
         xCredSSP "CS-Server"
@@ -67,6 +54,15 @@ configuration ConfigurationOM
             DelegateComputers = $Node.NodeName
         }
 
+        Package "P-SqlServerManagementStudio"
+        {
+            Ensure = "Present"
+            Name = "Microsoft SQL Server Management Studio - 16.5"
+            ProductID = ""
+            Path = "C:\LabBits\SSMS-Setup-ENU.exe"
+            Arguments = "/install /quiet"
+        }
+
         WaitForAll "WFA-DB"
         {
             NodeName = "DB"
@@ -75,22 +71,19 @@ configuration ConfigurationOM
             RetryCount = 720
             RetryIntervalSec = 5
         }
-
-        xSCOMManagementServerSetup "SMSS-ManagementServer"
+        
+        xSCDPMServerSetup "DPM"
         {
             Ensure = "Present"
             SourcePath = "C:\LabBits\Source"
-            SourceFolder = "1801"
             SetupCredential = $domainCredential
-            ManagementGroupName = "$domainPrefix"
-            FirstManagementServer = $true
-            ActionAccount = $actionCredential
-            DASAccount = $sdkCredential
-            DataReader = $drCredential
-            DataWriter = $dwCredential
-            SqlServerInstance = "DB"
-            DwSqlServerInstance = "DB"
-            DependsOn = "[cpDomainOnboarding]DomainOnboarding", "[xCredSSP]CS-Server", "[xCredSSP]CS-Client", "[Package]P-SqlServerClrTypes", "[WaitForAll]WFA-DB"
+            YukonMachineName = "DB"
+            YukonInstanceName = "MSSQLSERVER"
+            ReportingMachineName = "DB"
+            ReportingInstanceName = "MSSQLSERVER"
+            YukonMachineCredential = $domainCredential
+            ReportingMachineCredential = $domainCredential
+            DependsOn = "[cpDomainOnboarding]DomainOnboarding", "[xCredSSP]CS-Server", "[xCredSSP]CS-Client", "[Package]P-SqlServerManagementStudio", "[WaitForAll]WFA-DB"
         }
     }
 }

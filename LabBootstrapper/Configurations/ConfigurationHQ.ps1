@@ -41,7 +41,7 @@ configuration ConfigurationHQ
 
         cpNetworking "Networking"
         {
-            IpAddress = "$NetworkPrefix.253"
+            IpAddress = "$NetworkPrefix.253/24"
             DnsServer = "$NetworkPrefix.10"
         }
 
@@ -71,10 +71,10 @@ configuration ConfigurationHQ
             Arguments = "ALLUSERS=2"
         }
 
-        xSCOMConsoleSetup "SCS-Console"
+        xSCOMConsoleSetup "SOCS-Console"
         {
             Ensure = "Present"
-            SourcePath = "C:\LabBits\Source"
+            SourcePath = "C:\LabBits\OM"
             SourceFolder = "1801"
             SetupCredential = $domainCredential
             DependsOn = "[cpDomainOnboarding]DomainOnboarding","[Package]P-ReportViewer"
@@ -87,17 +87,26 @@ configuration ConfigurationHQ
             Id = "KB2693643"
         }
 
-        Package "P-ProjectHonolulu"
+        Package "P-DpmConsole"
         {
             Ensure = "Present"
-            Name = ""
-            ProductId = "228125BF-AA32-49AE-8939-0A76A75A573B"
-            Path = "C:\LabBits\HonoluluTechnicalPreview1709-20016.msi"
+            Name = "Microsoft System Center  DPM Remote Administration"
+            ProductId = "E0E2D04F-B7ED-4DD6-916E-F6C66EAF9296"
+            Path = "C:\LabBits\DPM\1801\DPM2012\dpmcli\dpmui.msi"
+            Arguments = ""
+        }
+
+        Package "P-WindowsAdminCenter"
+        {
+            Ensure = "Present"
+            Name = "Windows Admin Center"
+            ProductId = "464116A9-B010-48F5-A983-84063CE183E2"
+            Path = "C:\LabBits\WindowsAdminCenter1809.msi"
             Arguments = ""
         }
 
         # Workaround for the broken RSAT package which is missing the DNS configuration
-
+<#
         $files = @(
             "dnsmgmt.msc",
             "dnsmgr.dll",
@@ -157,7 +166,7 @@ configuration ConfigurationHQ
             }
             DependsOn = "[File]F-dnsrsat-dnsmgr.dll"
         }
-
+#>
         Environment "E-Path"
         {
             Name = "Path"

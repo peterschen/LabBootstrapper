@@ -95,7 +95,7 @@ configuration ConfigurationAPP1
 
         cpNetworking "Networking"
         {
-            IpAddress = "$NetworkPrefix.70"
+            IpAddress = "$NetworkPrefix.70/24"
             DnsServer = "$NetworkPrefix.10"
         }
 

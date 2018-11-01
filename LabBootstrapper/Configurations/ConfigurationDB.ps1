@@ -13,7 +13,7 @@ configuration ConfigurationDB
     );
 
     Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
-        @{ModuleName="xSQLServer";ModuleVersion="2.0.0.0"}
+        @{ModuleName="xSQLServer";ModuleVersion="9.1.0.0"}
 
     $features = @(
         "NET-Framework-Core"
@@ -22,6 +22,7 @@ configuration ConfigurationDB
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
     $agentCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-sql-agent", $Credential.Password);
     $engineCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-sql-engine", $Credential.Password);
+    $reportingCredential = New-Object System.Management.Automation.PSCredential ("$domainName\s-sql-reporting", $Credential.Password);
 
     Node DB
     {
@@ -44,7 +45,7 @@ configuration ConfigurationDB
 
         cpNetworking "Networking"
         {
-            IpAddress = "$NetworkPrefix.20"
+            IpAddress = "$NetworkPrefix.20/24"
             DnsServer = "$NetworkPrefix.10"
         }
 
@@ -59,12 +60,12 @@ configuration ConfigurationDB
         xSQLServerSetup "SSS-Default"
         {
             SourcePath = "C:\LabBits\SQL"
-            SetupCredential = $domainCredential
-            Features = "SQLENGINE,FULLTEXT"
+            Features = "SQLENGINE,FULLTEXT,RS"
             InstanceName = "MSSQLSERVER"
             SQLSysAdminAccounts = "$DomainName\g-SqlAdmins"
             SQLSvcAccount = $engineCredential
             AgtSvcAccount = $agentCredential
+            RSSvcAccount = $reportingCredential
             DependsOn = "[WindowsFeature]WF-NET-Framework-Core","[cpDomainOnboarding]DomainOnboarding"
         }
 
@@ -74,11 +75,6 @@ configuration ConfigurationDB
             InstanceName = "MSSQLSERVER"
             Features = "SQLENGINE,FULLTEXT"
             DependsOn = "[xSqlServerSetup]SSS-Default"
-        }
-
-        xSQLServerPowerPlan "SSPP-PowerConfiguration"
-        {
-            Ensure = "Present"
         }
 
         xSQLServerMemory "SSM-MemoryConfiguration"
@@ -95,6 +91,14 @@ configuration ConfigurationDB
             DynamicAlloc = $true
             SQLInstanceName = "MSSQLSERVER"
             DependsOn = "[xSqlServerSetup]SSS-Default"
+        }
+
+        xSQLServerRSConfig "SSRC-DefaultConfiguration"
+        {
+            InstanceName = "MSSQLSERVER"
+            RSSQLServer = "localhost"
+            RSSQLInstanceName = "MSSQLSERVER"
+            DependsOn = "[xSQLServerSetup]SSS-Default"
         }
     }
 }

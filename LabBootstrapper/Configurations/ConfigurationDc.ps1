@@ -46,11 +46,13 @@ configuration ConfigurationDC
         @{Name = "s-om-datawriter"; Path = "ou=Services,ou=Accounts,ou=$domainPrefix,dc=$domainPrefix,dc=lab"},
         $userOmMsaa,
         @{Name = "s-om-sdk"; Path = "ou=Services,ou=Accounts,ou=$domainPrefix,dc=$domainPrefix,dc=lab"}
+        @{Name = "s-dpm"; Path = "ou=Services,ou=Accounts,ou=$domainPrefix,dc=$domainPrefix,dc=lab"}
     );
 
     $groups = @(
         @{Name = "g-SqlAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("Administrator","$($userChristoph.Name)")},
         @{Name = "g-OmAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("Administrator", "$($userChristoph.Name)", "$($userOmMsaa.Name)")},
+        @{Name = "g-DpmAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("Administrator", "$($userChristoph.Name)")},
         @{Name = "g-OrAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("Administrator", "$($userChristoph.Name)")},
         @{Name = "g-LocalAdmins"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
         @{Name = "g-RemoteDesktopUsers"; Path = "ou=Groups,ou=$domainPrefix,dc=$domainPrefix,dc=lab"; Members = @("$($userChristoph.Name)")}
@@ -82,7 +84,7 @@ configuration ConfigurationDC
 
         cpNetworking "Networking"
         {
-            IpAddress = "$NetworkPrefix.10"
+            IpAddress = "$NetworkPrefix.10/24"
             DnsServer = "127.0.0.1"
             DependsOn = "[WindowsFeature]WF-AD-Domain-Services"
         }
