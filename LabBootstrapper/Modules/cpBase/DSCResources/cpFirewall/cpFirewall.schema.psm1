@@ -5,8 +5,7 @@ Configuration cpFirewall
         [string[]] $ExtraRules = @()
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="5.5.0.0"};
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, xNetworking;
 
     $rules = $ExtraRules + @(
         "FPS-NB_Datagram-In-UDP",
@@ -31,5 +30,26 @@ Configuration cpFirewall
             Ensure = "Present"
             Enabled = "True"
         }
+    }
+        
+    xFirewall "DPM-Agent-DPMRA.exe"
+    {
+        Name = "DPM Agent (DPMRA.exe)"
+        Profile = ("Domain", "Private", "Public")
+        Direction = "Inbound"
+        Program = "%PROGRAMFILES%\Microsoft Data Protection Manager\DPM\bin\DPMRA.exe"
+        Ensure = "Present"
+        Enabled = "True"
+    }
+
+    xFirewall "DPM-Agent-DCOM-TCP135"
+    {
+        Name = "DPM Agent (DCOM TCP/135)"
+        Profile = ("Domain", "Private", "Public")
+        Direction = "Inbound"
+        Ensure = "Present"
+        Enabled = "True"
+        LocalPort = "135"
+        Protocol = "Tcp"
     }
 }

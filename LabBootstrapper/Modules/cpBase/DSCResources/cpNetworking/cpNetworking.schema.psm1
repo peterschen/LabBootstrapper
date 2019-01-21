@@ -6,8 +6,7 @@ Configuration cpNetworking
         [string] $DnsServer
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration,
-        @{ModuleName="xNetworking";ModuleVersion="5.5.0.0"};
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, xNetworking;
 
     xIPAddress "IP"
     {

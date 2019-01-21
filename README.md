@@ -63,7 +63,7 @@ VhdPath | Yes | Path wehere VHDs should be placed | -
 VmPath | Yes | Path where the VMs should be placed | -
 BitsPath | No | Path where the sources are located | .\Assets\Bits
 HvSwitchName | Yes | Hyper-V switch name to use | -
-OsProductKey | No | Product key for the OS customization (defaults to Windows Server 2016 KMS activation key | WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY
+OsProductKey | No | Product key for the OS customization (defaults to Windows Server 2019 KMS activation key | N69G4-B89J2-4G8F4-WWYCC-J464C
 OsOrganization | No | Organization used for OS customization | $LabPrefix
 OsOwner | No | Owner used for OS customization | $LabPrefix
 OsTimezone | No  | Timezone used for OS customization | W. Europe Standard Time

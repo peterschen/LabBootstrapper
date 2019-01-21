@@ -12,7 +12,7 @@
     [string] $MasterVhdPath,
     [string] $BitsPath,
     [string] $HvSwitchName,
-    [string] $OsProductKey = "WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY",
+    [string] $OsProductKey = "N69G4-B89J2-4G8F4-WWYCC-J464C",
     [string] $OsOrganization = $LabPrefix,
     [string] $OsOwner = $LabPrefix,
     [string] $OsTimezone = "W. Europe Standard Time",
@@ -39,8 +39,8 @@ $Script:PATH_DSCMODULES = "$($Script:PATH_ASSETS)\DscModules";
 $Script:PACKAGES = @{
     "xActiveDirectory" = "2.13.0.0"
     "xComputerManagement" = "1.8.0.0"
-    "xNetworking" = "5.5.0.0"
-    "xPSDesiredStateConfiguration" = "7.0.0.0"
+    "xNetworking" = "5.7.0.0"
+    "xPSDesiredStateConfiguration" = "8.0.0.0"
     "xSQLServer" = "9.1.0.0"
     "xCredSSP" = "1.1.0.0"
     "xSCOM" = "1.3.3.0"
@@ -344,7 +344,7 @@ try
             # Test if the VHD exists
             if(-not (Test-Path -Path $newVhdPath))
             {
-                $newVhd = New-VHD -ParentPath $MasterVhdPath -Path $newVhdPath -Differencing -SizeBytes 80GB;
+                $newVhd = New-VHD -ParentPath $MasterVhdPath -Path $newVhdPath -Differencing;
                 $newVhdPath = $newVhd.Path;
 
                 $requireUnattend = $true;

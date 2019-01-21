@@ -12,8 +12,8 @@ configuration ConfigurationDB
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
-        @{ModuleName="xSQLServer";ModuleVersion="9.1.0.0"}
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase, `
+        xSQLServer;
 
     $features = @(
         "NET-Framework-Core"
@@ -42,7 +42,7 @@ configuration ConfigurationDB
                 "WMI-WINMGMT-In-TCP"
             )
         }
-
+        
         cpNetworking "Networking"
         {
             IpAddress = "$NetworkPrefix.20/24"
@@ -73,7 +73,7 @@ configuration ConfigurationDB
         {
             SourcePath = "C:\LabBits\SQL"
             InstanceName = "MSSQLSERVER"
-            Features = "SQLENGINE,FULLTEXT"
+            Features = "SQLENGINE,FULLTEXT,RS"
             DependsOn = "[xSqlServerSetup]SSS-Default"
         }
 
@@ -91,14 +91,6 @@ configuration ConfigurationDB
             DynamicAlloc = $true
             SQLInstanceName = "MSSQLSERVER"
             DependsOn = "[xSqlServerSetup]SSS-Default"
-        }
-
-        xSQLServerRSConfig "SSRC-DefaultConfiguration"
-        {
-            InstanceName = "MSSQLSERVER"
-            RSSQLServer = "localhost"
-            RSSQLInstanceName = "MSSQLSERVER"
-            DependsOn = "[xSQLServerSetup]SSS-Default"
         }
     }
 }

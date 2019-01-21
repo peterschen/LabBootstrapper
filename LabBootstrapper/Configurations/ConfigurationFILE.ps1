@@ -12,11 +12,8 @@ configuration ConfigurationFILE
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
-        @{ModuleName="PackageManagement";ModuleVersion="1.1.6.0"},
-        @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
-    
-    Import-DscResource -Name "PSModule" -ModuleName "PackageManagementProviderResource" -ModuleVersion "1.0.3";
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase, `
+        PackageManagement, xPSDesiredStateConfiguration;
 
     $features = @(
     );

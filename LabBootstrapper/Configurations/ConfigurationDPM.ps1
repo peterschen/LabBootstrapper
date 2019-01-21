@@ -12,12 +12,10 @@ configuration ConfigurationDPM
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
-        @{ModuleName="xCredSSP";ModuleVersion="1.1.0.0"},
-        @{ModuleName="xSCDPM";ModuleVersion="1.2.0.0"};
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase, `
+        xCredSSP, xSCDPM;
 
     $domainPrefix = $DomainName.Split(".")[0];
-
     $domainCredential = New-Object System.Management.Automation.PSCredential ("$domainName\Administrator", $Credential.Password);
     $credential = New-Object System.Management.Automation.PSCredential ("$domainName\s-dpm", $Credential.Password);
 

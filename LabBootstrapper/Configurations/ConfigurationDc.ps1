@@ -15,9 +15,8 @@ configuration ConfigurationDC
         [int] $RetryInterval = 30
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
-        @{ModuleName="xActiveDirectory";ModuleVersion="2.13.0.0"}
-        @{ModuleName="xPSDesiredStateConfiguration";ModuleVersion="7.0.0.0"}
+    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase, `
+        xActiveDirectory, xPSDesiredStateConfiguration, xNetworking;
 
     $domainPrefix = $DomainName.Split(".")[0];
 
@@ -155,6 +154,26 @@ configuration ConfigurationDC
                 DomainController = "$($Node.NodeName).$($DomainName)"
                 DependsOn = "[xADUser]ADU-christoph", "[xADUser]ADU-s-om-msaa", "[xADGroup]ADG-g-RemoteDesktopUsers", "[xADGroup]ADG-g-RemoteManagementUsers"
             }
+        }
+
+        xFirewall "WindowsAdminCenter-HTTP-TCP6516"
+        {
+            Name = "Windows Admin Center (HTTP TCP/6516)"
+            Profile = ("Domain", "Private", "Public")
+            Direction = "Inbound"
+            Ensure = "Present"
+            Enabled = "True"
+            LocalPort = "6516"
+            Protocol = "Tcp"
+        }
+
+        Package "P-WindowsAdminCenter"
+        {
+            Ensure = "Present"
+            Name = "Windows Admin Center"
+            ProductId = "4FAE3A2E-4369-490E-97F3-0B3BFF183AB9"
+            Path = "C:\LabBits\WindowsAdminCenter1809.5.msi"
+            Arguments = ""
         }
     }
 }

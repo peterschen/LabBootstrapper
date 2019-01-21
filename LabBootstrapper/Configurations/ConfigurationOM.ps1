@@ -12,9 +12,8 @@ configuration ConfigurationOM
         [string] $NetworkPrefix
     );
 
-    Import-DscResource -ModuleName PSDesiredStateConfiguration, cpBase,
-        @{ModuleName="xCredSSP";ModuleVersion="1.1.0.0"},
-        @{ModuleName="xSCOM";ModuleVersion="1.3.3.0"};
+    Import-DscResource -ModuleName cpBase, PSDesiredStateConfiguration, `
+        xCredSSP, xSCOM;
 
     $domainPrefix = $DomainName.Split(".")[0];
 
