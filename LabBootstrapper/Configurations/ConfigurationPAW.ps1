@@ -13,7 +13,7 @@ configuration ConfigurationPAW
     );
 
     Import-DscResource -ModuleName cpBase, PSDesiredStateConfiguration, `
-        PackageManagementProviderResource, DismFeature, `
+        PackageManagementProviderResource, xDismFeature, `
         xSCOM, xWindowsUpdate;
         
     $features = @(

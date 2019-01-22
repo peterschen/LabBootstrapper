@@ -233,6 +233,11 @@ function Copy-DscConfiguration
         $dscConfigurationScript = [scriptblock]::Create($dscConfiguration);
         Invoke-Command -ScriptBlock $dscConfigurationScript | Out-Null;
 
+        if(Test-Path "$($workDirectory)\localhost.mof")
+        {
+            Rename-Item -Path"$($workDirectory)\localhost.mof" -NewName "$($ComputerName).mof"
+        }
+
         Remove-Item -Path "$($Path)\Current.mof" -Force -ErrorAction SilentlyContinue;
         Copy-Item -Path "$($workDirectory)\$($ComputerName).mof" -Destination "$($Path)\Pending.mof" -Force;
     }

@@ -27,17 +27,36 @@ configuration ConfigurationWAC
         cpNetworking "Networking"
         {
             IpAddress = "$NetworkPrefix.11/24"
-            DnsServer = "127.0.0.1"
+            DnsServer = "$NetworkPrefix.10"
         }
 
-        xFirewall "WindowsAdminCenter-HTTP-TCP6516"
+        cpDomainOnboarding "DomainOnboarding"
         {
-            Name = "Windows Admin Center (HTTP TCP/6516)"
+            NodeName = $Node.NodeName
+            DomainName = $DomainName
+            Credential = $Credential.Password
+            DependsOn = "[cpNetworking]Networking"
+        }
+
+        xFirewall "WindowsAdminCenter-HTTP-TCP80"
+        {
+            Name = "Windows Admin Center (HTTP TCP/80)"
             Profile = ("Domain", "Private", "Public")
             Direction = "Inbound"
             Ensure = "Present"
             Enabled = "True"
-            LocalPort = "6516"
+            LocalPort = "80"
+            Protocol = "Tcp"
+        }
+
+        xFirewall "WindowsAdminCenter-HTTP-TCP443"
+        {
+            Name = "Windows Admin Center (HTTP TCP/443)"
+            Profile = ("Domain", "Private", "Public")
+            Direction = "Inbound"
+            Ensure = "Present"
+            Enabled = "True"
+            LocalPort = "443"
             Protocol = "Tcp"
         }
 
@@ -47,7 +66,7 @@ configuration ConfigurationWAC
             Name = "Windows Admin Center"
             ProductId = "4FAE3A2E-4369-490E-97F3-0B3BFF183AB9"
             Path = "C:\LabBits\WindowsAdminCenter1809.5.msi"
-            Arguments = ""
+            Arguments = "RESTART_WINRM=0"
         }
     }
 }
